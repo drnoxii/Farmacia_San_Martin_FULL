@@ -9,6 +9,7 @@ import com.sanmartin.farmacias.Entity.*;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,6 +44,7 @@ public class VentaServiceImpl implements IVentaService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<VentaResponseDTO> buscarPorId(Long id) {
         return ventaRepository.findById(id).map(this::toDto);
     }

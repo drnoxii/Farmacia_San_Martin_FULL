@@ -56,4 +56,10 @@ public class VentaController {
             @RequestBody @Valid VentaRequestDTO dto) {
         return new ResponseEntity<>(ventaServices.registrar(dto), HttpStatus.CREATED);
     }
+
+    public ResponseEntity<VentaResponseDTO> obtenerComprobante(@PathVariable Long id){
+        return ventaServices.buscarPorId(id).map(ResponseEntity::ok)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontró la venta con ID: "+ id));
+    }
+
 }
