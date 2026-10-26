@@ -1,0 +1,40 @@
+<div class="container-fluid py-4">
+  
+  <!-- Saludo al usuario -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-dark">¡Bienvenido, {{ nombreUsuario }}!</h2>
+    <p class="text-muted">Selecciona un módulo para comenzar a trabajar.</p>
+  </div>
+
+  <!-- Cuadrícula de Opciones -->
+  <div class="row g-4">
+    
+    <!-- Iteramos sobre los módulos y filtramos por rol -->
+    <div class="col-xl-3 col-lg-4 col-md-6" *ngFor="let modulo of modulos">
+      
+      <ng-container *ngIf="tieneAcceso(modulo.roles)">
+        
+        <!-- Tarjeta clickeable -->
+        <a [routerLink]="modulo.ruta" class="text-decoration-none">
+          <div class="card h-100 shadow-sm border-0 card-modulo">
+            <div class="card-body text-center p-4">
+              
+              <!-- Icono Grande -->
+              <div class="icon-wrapper mb-3">
+                <i class="bi {{ modulo.icono }}"></i>
+              </div>
+              
+              <!-- Textos -->
+              <h5 class="card-title fw-bold text-dark mb-2">{{ modulo.titulo }}</h5>
+              <p class="card-text text-muted small">{{ modulo.descripcion }}</p>
+              
+            </div>
+          </div>
+        </a>
+
+      </ng-container>
+
+    </div>
+  </div>
+
+</div>

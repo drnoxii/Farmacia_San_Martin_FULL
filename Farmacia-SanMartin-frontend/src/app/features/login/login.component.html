@@ -1,0 +1,69 @@
+<div class="container-fluid vh-100 p-0">
+  <div class="row g-0 h-100">
+    
+    <!-- LADO IZQUIERDO: Imagen / Branding -->
+    <div class="col-md-6 d-none d-md-flex align-items-center justify-content-center bg-sanmartin-primary text-white">
+      <div class="text-center p-5">
+        <i class="bi bi-capsule" style="font-size: 6rem; color: var(--color-acento);"></i>
+        <h1 class="mt-4 fw-bold">Farmacia San Martín</h1>
+        <p class="fs-5 mt-3">Sistema de Gestión de Ventas e Inventario</p>
+      </div>
+    </div>
+
+    <!-- LADO DERECHO: Formulario -->
+    <div class="col-md-6 d-flex align-items-center justify-content-center bg-light">
+      <div class="card shadow-lg border-0 rounded-4 p-5" style="width: 100%; max-width: 450px;">
+        
+        <div class="text-center mb-4">
+          <h2 class="fw-bold text-dark">Bienvenido</h2>
+          <p class="text-muted">Ingresa tus credenciales para continuar</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+          
+          <!-- Campo Correo -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Correo Electrónico</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
+              <input type="email" class="form-control form-control-lg" formControlName="correo" placeholder="admin@farmacia.com">
+            </div>
+            <!-- Error de validación -->
+            <small class="text-danger" *ngIf="loginForm.get('correo')?.invalid && loginForm.get('correo')?.touched">
+              Ingresa un correo válido
+            </small>
+          </div>
+
+          <!-- Campo Password -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Contraseña</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
+              <input type="password" class="form-control form-control-lg" formControlName="password" placeholder="••••••••">
+            </div>
+          </div>
+
+          <!-- Alerta de Error -->
+          <div class="alert alert-danger py-2" *ngIf="errorMensaje">
+            {{ errorMensaje }}
+          </div>
+
+          <!-- Botón -->
+          <button type="submit" class="btn btn-lg w-100 fw-bold text-white shadow-sm" 
+                  style="background-color: var(--color-primario);">
+            Iniciar Sesión
+          </button>
+
+          <!-- Olvidé contraseña -->
+          <div class="text-center mt-4">
+            <a href="javascript:void(0)" (click)="onOlvidePassword()" class="text-decoration-none text-muted small">
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
