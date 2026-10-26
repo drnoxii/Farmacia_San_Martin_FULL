@@ -1,8 +1,10 @@
 package com.sanmartin.farmacias.Repository;
 
+import com.sanmartin.farmacias.Dto.InventarioDto;
 import com.sanmartin.farmacias.Entity.EstadoGeneral;
 import com.sanmartin.farmacias.Entity.Producto;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,4 +17,19 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByCategoria_idCategoria(Long idCategoria);
     List<Producto> findByLaboratorio_idLaboratorio(Long idLaboratorio);
     List<Producto> findByEstadoGeneral(EstadoGeneral estadoGeneral);
+
+    @Query("""
+    SELECT new com.sanmartin.farmacias.Dto.InventarioDto(
+        p.idProducto,
+        p.nombreProducto,
+        p.precioVenta,
+        p.stockMinimo,
+        COALESCE(SUM(l.stockLote), 0L)
+    )
+    FROM Producto p
+    LEFT JOIN Lote l ON l.producto = p
+    GROUP BY p.idProducto, p.nombreProducto, p.precioVenta, p.stockMinimo
+    ORDER BY p.nombreProducto
+    """)
+    List<InventarioDto> consultarInventario();
 }

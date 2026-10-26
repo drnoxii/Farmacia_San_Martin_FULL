@@ -1,5 +1,6 @@
 package com.sanmartin.farmacias.Controller;
 
+import com.sanmartin.farmacias.Dto.InventarioDto;
 import com.sanmartin.farmacias.Dto.ProductoDto;
 import com.sanmartin.farmacias.Entity.EstadoGeneral;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
@@ -72,6 +73,12 @@ public class ProductoController {
     public ResponseEntity<ProductoDto> actualizarProducto(@PathVariable Long id, @RequestBody @Valid ProductoDto producto) {
         return (ResponseEntity) this.productoServices.actualizarProducto(id, producto).map(ResponseEntity::ok)
                 .orElseThrow(() -> new ResourceNotFoundException("NO se pudo actualizar el producto con ID: " + id));
+    }
+
+    @GetMapping("/inventario")
+    @Operation(summary = "Consulta del inventario de productos")
+    public ResponseEntity<List<InventarioDto>> consultarInventario(){
+        return ResponseEntity.ok(productoServices.consultarInventario());
     }
 
     @DeleteMapping("/{id}")

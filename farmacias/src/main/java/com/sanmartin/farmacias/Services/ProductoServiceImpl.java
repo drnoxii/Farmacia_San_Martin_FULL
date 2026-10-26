@@ -1,5 +1,6 @@
 package com.sanmartin.farmacias.Services;
 
+import com.sanmartin.farmacias.Dto.InventarioDto;
 import com.sanmartin.farmacias.Dto.ProductoDto;
 import com.sanmartin.farmacias.Entity.Categoria;
 import com.sanmartin.farmacias.Entity.EstadoGeneral;
@@ -117,6 +118,11 @@ public class ProductoServiceImpl implements IProductoServices{
     @Override
     public List<ProductoDto> buscarPorEstadoGeneral(EstadoGeneral estadoGeneral) {
         return productoRepository.findByEstadoGeneral(estadoGeneral).stream().map(this::convertToDto).toList();
+    }
+
+    @Override
+    public List<InventarioDto> consultarInventario() {
+        return productoRepository.consultarInventario();
     }
 
     private ProductoDto convertToDto(Producto producto){

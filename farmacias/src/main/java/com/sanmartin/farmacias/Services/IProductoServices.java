@@ -1,5 +1,6 @@
 package com.sanmartin.farmacias.Services;
 
+import com.sanmartin.farmacias.Dto.InventarioDto;
 import com.sanmartin.farmacias.Dto.ProductoDto;
 import com.sanmartin.farmacias.Entity.EstadoGeneral;
 import org.springframework.stereotype.Service;
@@ -19,4 +20,6 @@ public interface IProductoServices {
     List<ProductoDto> buscarPorCategoria(Long idCategoria);
     List<ProductoDto> buscarPorLaboratorio(Long idLaboratorio);
     List<ProductoDto> buscarPorEstadoGeneral(EstadoGeneral estadoGeneral);
+
+    List<InventarioDto> consultarInventario();
 }
