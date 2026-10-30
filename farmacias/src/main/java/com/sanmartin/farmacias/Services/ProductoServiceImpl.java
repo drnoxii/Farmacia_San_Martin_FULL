@@ -36,6 +36,7 @@ public class ProductoServiceImpl implements IProductoServices{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProductoDto> buscarProductoPorId(Long id) {
         return productoRepository.findById(id).map(this::convertToDto);
     }
@@ -54,6 +55,7 @@ public class ProductoServiceImpl implements IProductoServices{
                 orElseThrow(() -> new ResourceNotFoundException("Laboratorio no encontrado"));
 
         Producto prod= new Producto();
+        prod.setCodigo(producto.codigo());
         prod.setNombreProducto(producto.nombreProducto());
         prod.setDescripcion(producto.descripcion());
         prod.setCategoria(categoria);
@@ -99,6 +101,7 @@ public class ProductoServiceImpl implements IProductoServices{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProductoDto> buscarPorNombre(String nombre) {
         return productoRepository.findBynombreProducto(nombre).map(this::convertToDto);
     }
@@ -116,6 +119,7 @@ public class ProductoServiceImpl implements IProductoServices{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductoDto> buscarPorEstadoGeneral(EstadoGeneral estadoGeneral) {
         return productoRepository.findByEstadoGeneral(estadoGeneral).stream().map(this::convertToDto).toList();
     }
@@ -128,6 +132,7 @@ public class ProductoServiceImpl implements IProductoServices{
     private ProductoDto convertToDto(Producto producto){
         return new ProductoDto(
                 producto.getIdProducto(),
+                producto.getCodigo(),
                 producto.getNombreProducto(),
                 producto.getDescripcion(),
                 producto.getCategoria().getIdCategoria(),
@@ -135,7 +140,10 @@ public class ProductoServiceImpl implements IProductoServices{
                 producto.getPrecioCompra(),
                 producto.getPrecioVenta(),
                 producto.getStockMinimo(),
-                producto.getEstadoGeneral()
+                producto.getEstadoGeneral(),
+
+                producto.getCategoria().getNombreCategoria(),
+                producto.getLaboratorio().getNombreLaboratorio()
         );
     }
 

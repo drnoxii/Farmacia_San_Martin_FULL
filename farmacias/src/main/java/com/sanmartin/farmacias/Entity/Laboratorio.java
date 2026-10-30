@@ -21,7 +21,7 @@ public class Laboratorio {
     public Laboratorio(Long idLaboratorio, String nombreLaboratorio, String paisOrigenLab) {
         this.idLaboratorio = idLaboratorio;
         this.nombreLaboratorio = nombreLaboratorio;
-        PaisOrigenLab = paisOrigenLab;
+        this.PaisOrigenLab = paisOrigenLab;
     }
 
     public Long getIdLaboratorio() {

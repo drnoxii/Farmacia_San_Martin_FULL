@@ -14,6 +14,9 @@ public class Producto {
     @Column(nullable = false, length = 100)
     private String nombreProducto;
 
+    @Column(unique = true, length = 50)
+    private String codigo;
+
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
@@ -40,9 +43,10 @@ public class Producto {
     public Producto() {
     }
 
-    public Producto(Long idProducto, String nombreProducto, String descripcion, Categoria categoria, Laboratorio laboratorio, BigDecimal precioCompra, BigDecimal precioVenta, Integer stockMinimo, EstadoGeneral estadoGeneral) {
+    public Producto(Long idProducto, String nombreProducto, String codigo, String descripcion, Categoria categoria, Laboratorio laboratorio, BigDecimal precioCompra, BigDecimal precioVenta, Integer stockMinimo, EstadoGeneral estadoGeneral) {
         this.idProducto = idProducto;
         this.nombreProducto = nombreProducto;
+        this.codigo = codigo;
         this.descripcion = descripcion;
         this.categoria = categoria;
         this.laboratorio = laboratorio;
@@ -66,6 +70,14 @@ public class Producto {
 
     public void setNombreProducto(String nombreProducto) {
         this.nombreProducto = nombreProducto;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
     }
 
     public String getDescripcion() {

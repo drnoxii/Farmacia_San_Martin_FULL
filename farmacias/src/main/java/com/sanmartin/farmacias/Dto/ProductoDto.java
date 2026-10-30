@@ -10,6 +10,8 @@ public record ProductoDto(
         @Parameter(hidden = true)
         Long idProducto,
 
+        String codigo,
+
         @NotBlank(message = "El nombre del producto es obligatoria")
         @Size(max = 100, message = "El nombre debe maximo 100 caracteres")
         String nombreProducto,
@@ -37,6 +39,9 @@ public record ProductoDto(
         Integer stockMinimo,
 
         @NotNull(message = "Este campo es obligatorio")
-        EstadoGeneral estadoGeneral
+        EstadoGeneral estadoGeneral,
+
+        String nombreCategoria,
+        String nombreLaboratorio
 ) {
 }
