@@ -7,6 +7,11 @@ import { ProductFormComponent } from './features/products/product-form/product-f
 
 export const routes: Routes = [
 
+    {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  },
     { 
     path: 'login', 
     component: LoginComponent 
@@ -26,6 +31,6 @@ export const routes: Routes = [
     },
     {
         path: '**', 
-        redirectTo: 'login'
+        redirectTo: 'dashboard'
     }
 ];
