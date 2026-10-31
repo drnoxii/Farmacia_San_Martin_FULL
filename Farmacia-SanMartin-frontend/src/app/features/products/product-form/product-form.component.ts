@@ -62,13 +62,12 @@ export class ProductFormComponent implements OnInit {
      guardar() {
     if (this.form.invalid) return;
 
-    // Armamos el objeto con lo que espera nuestro backend
+
     const productoData = {
       ...this.form.value,
-      estado: 'ACTIVO' // Si es edición, podrías mantener el estado actual
+     estadoGeneral: this.id ? (this.form.value.estadoGeneral || 'ACTIVO') : 'ACTIVO' 
     };
 
-    // Decidimos si es POST o PUT
     const request = this.id 
       ? this.productoService.actualizar(this.id, productoData)
       : this.productoService.crear(productoData);

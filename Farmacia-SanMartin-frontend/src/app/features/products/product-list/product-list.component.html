@@ -1,61 +1,143 @@
 <div class="container-fluid py-4">
+  <!-- Cabecera -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold text-dark m-0"><i class="bi bi-capsule me-2"></i>Catálogo de Productos</h2>
-    <!-- Botón que luego enlazará al formulario -->
     <button class="btn btn-sanmartin" routerLink="/productos/nuevo">
       <i class="bi bi-plus-circle me-1"></i> Nuevo Producto
     </button>
   </div>
 
+  <!-- Buscador -->
   <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
-      <input type="text" class="form-control" placeholder="Buscar producto por nombre o código..." [(ngModel)]="busqueda">
+      <input type="text" class="form-control" placeholder="Buscar producto por nombre o código..."
+        [(ngModel)]="busqueda">
     </div>
   </div>
 
+  <!-- Tabla de Productos -->
   <div class="card shadow-sm border-0 rounded-3">
     <div class="card-body p-0">
       <table class="table table-hover align-middle mb-0">
-  <thead class="table-light text-muted">
-    <tr>
-      <th class="ps-4">Producto</th>
-      <th>Categoría</th>
-      <th class="text-end">Precio Venta</th>
-      <th class="text-center">Stock</th>
-      <th class="text-center">Estado</th>
-      <th class="text-center">Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let p of productosFiltrados">
-      <td class="ps-4 fw-bold text-dark">{{ p.nombreProducto }}</td>
-      <td>{{ p.nombreCategoria || 'Sin categoría' }}</td>
-      <td class="text-end">S/ {{ p.precioVenta | number:'1.2-2' }}</td>
-      
-      <td class="text-center">
-        <span class="badge rounded-pill" [ngClass]="(p.stockActual || 0) === 0 ? 'bg-danger' : 'bg-success'">
-          {{ p.stockActual || 0 }}
-        </span>
-      </td>
-      
-      <td class="text-center">
-        <!-- Aquí arreglamos el texto del estado -->
-        <span class="badge" [ngClass]="p.estadoGeneral === 'ACTIVO' ? 'bg-primary' : 'bg-secondary'">
-          {{ p.estadoGeneral || 'INACTIVO' }}
-        </span>
-      </td>
-      
-      <td class="text-center">
-        <button class="btn btn-sm btn-outline-info me-1" title="Ver Lotes">
-          <i class="bi bi-box-seam"></i> Lotes
-        </button>
-        <button class="btn btn-sm btn-outline-primary" [routerLink]="['/productos/editar', p.idProducto]" title="Editar">
-          <i class="bi bi-pencil"></i>
-        </button>
-      </td>
-    </tr>
-  </tbody>
-</table>
+        <thead class="table-light text-muted">
+          <tr>
+            <th class="ps-4">Código</th>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th class="text-end">P. Venta</th>
+            <th class="text-center">Stock Total</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="cargando">
+            <td colspan="7" class="text-center py-4">Cargando productos...</td>
+          </tr>
+
+          <tr *ngFor="let p of productosFiltrados">
+            <td class="ps-4 text-secondary">{{ p.codigo || '-' }}</td>
+            <td class="fw-bold text-dark">{{ p.nombreProducto }}</td>
+            <td>{{ p.nombreCategoria }}</td>
+            <td class="text-end">S/ {{ p.precioVenta | number:'1.2-2' }}</td>
+
+            <!-- Badge de Stock (Simulado, luego lo conectamos al backend real) -->
+            <td class="text-center">
+              <span class="badge rounded-pill" [ngClass]="(p.stockTotal || 0) === 0 ? 'bg-danger' : 'bg-success'">
+                {{ p.stockTotal || 0 }}
+              </span>
+            </td>
+
+            <!-- Estado con colores -->
+            <td class="text-center">
+              <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': p.estadoGeneral === 'ACTIVO', 
+                      'bg-danger': p.estadoGeneral === 'INACTIVO'
+                    }">
+                {{ p.estadoGeneral }}
+              </span>
+            </td>
+
+            <!-- Acciones -->
+            <td class="text-center">
+              <!-- Botón de Lotes -->
+              <button class="btn btn-sm btn-outline-info me-1" title="Ver Lotes" data-bs-toggle="modal"
+                data-bs-target="#modalLotes" (click)="verLotes(p)">
+                <i class="bi bi-box-seam"></i>
+              </button>
+
+              <!-- Botón de Editar -->
+              <button class="btn btn-sm btn-outline-primary me-1" [routerLink]="['/productos/editar', p.idProducto]"
+                title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <!-- Botón de Encendido/Apagado -->
+              <button class="btn btn-sm"
+                [ngClass]="p.estadoGeneral === 'ACTIVO' ? 'btn-outline-danger' : 'btn-outline-success'"
+                (click)="cambiarEstado(p)" [title]="p.estadoGeneral === 'ACTIVO' ? 'Desactivar' : 'Activar'">
+                <i class="bi" [ngClass]="p.estadoGeneral === 'ACTIVO' ? 'bi-power' : 'bi-arrow-clockwise'"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE LOTES -->
+<div class="modal fade" id="modalLotes" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-sanmartin-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-box-seam me-2"></i>Lotes de: {{ productoSeleccionado?.nombreProducto }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Número de Lote</th>
+              <th>Vencimiento</th>
+              <th class="text-center">Stock</th>
+              <th class="text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="lotesDelProducto.length === 0">
+              <td colspan="4" class="text-center py-4 text-muted">
+                Este producto aún no tiene lotes (stock). Debes registrar una Compra.
+              </td>
+            </tr>
+            <tr *ngFor="let lote of lotesDelProducto">
+              <td class="ps-4 fw-bold">{{ lote.numeroLote }}</td>
+              <td>{{ lote.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+              <td class="text-center">
+                <span class="badge bg-secondary">{{ lote.stockLote }}</span>
+              </td>
+              <td class="text-center">
+                <!-- Colores para el estado del LOTE -->
+                <span class="badge rounded-pill" [ngClass]="{
+          'bg-success': lote.estado === 'ACTIVO',
+          'bg-danger': lote.estado === 'VENCIDO',
+          'bg-warning text-dark': lote.estado === 'AGOTADO'
+        }">
+                  {{ lote.estado }}
+                </span>
+
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>

@@ -1,15 +1,14 @@
 export interface Producto {
   idProducto?: number;
-  codigo: string;
+  codigo?: string;
   nombreProducto: string;
+  descripcion: string;
   idCategoria: number;
   idLaboratorio: number;
+  precioCompra: number;
   precioVenta: number;
   stockMinimo: number;
-  estadoGeneral: 'ACTIVO' | 'INACTIVO';
-  
-  // Opcionales para cuando listas desde el backend
-  nombreCategoria?: string; 
-  nombreLaboratorio?: string;
-  stockActual?: number; 
+  estadoGeneral: 'ACTIVO' | 'INACTIVO'; 
+  nombreCategoria?: string;
+  stockTotal?: number;
 }

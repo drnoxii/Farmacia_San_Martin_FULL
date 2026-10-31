@@ -11,8 +11,9 @@ export class ProductoService {
 private apiUrl = '/api/v1/producto';
   constructor(private http: HttpClient) {}
 
-  listar(): Observable<Producto[]> {
-    return this.http.get<Producto[]>(this.apiUrl);
+    listar(): Observable<Producto[]> {
+    // Cambiamos la ruta para usar la consulta con stock
+    return this.http.get<Producto[]>(`${this.apiUrl}/inventario`);
   }
 
   crear(producto: Producto): Observable<Producto> {
@@ -46,5 +47,7 @@ private apiUrl = '/api/v1/producto';
   buscarPorCategoria(idCategoria: number): Observable<Producto[]> {
     return this.http.get<Producto[]>(`${this.apiUrl}/categoria/${idCategoria}`);
   }
+
+  
 
 }
