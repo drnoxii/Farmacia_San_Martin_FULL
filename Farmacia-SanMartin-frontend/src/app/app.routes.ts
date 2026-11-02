@@ -5,6 +5,7 @@ import { LoginComponent } from './features/login/login.component';
 import { ProductListComponent } from './features/products/product-list/product-list.component';
 import { ProductFormComponent } from './features/products/product-form/product-form.component';
 import { ComprasListComponent } from './features/compras/compras-list/compras-list.component';
+import { VentasPosComponent } from './features/ventas-pos/ventas-pos.component';
 
 export const routes: Routes = [
 
@@ -27,7 +28,8 @@ export const routes: Routes = [
             { path: 'productos', component: ProductListComponent},
             { path: 'productos/nuevo', component: ProductFormComponent},
             { path: 'productos/editar/:id', component: ProductFormComponent },
-            {path: 'compras', component: ComprasListComponent}
+            {path: 'compras', component: ComprasListComponent},
+            {path: 'ventas', component: VentasPosComponent}
             
         ]
     },

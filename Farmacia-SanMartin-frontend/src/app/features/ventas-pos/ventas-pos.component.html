@@ -1,0 +1,333 @@
+<div class="container-fluid py-3">
+    <div class="row g-3">
+
+        <!-- ========================================== -->
+        <!-- COLUMNA IZQUIERDA: BUSCADOR Y PRODUCTOS -->
+        <!-- ========================================== -->
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <label class="fw-bold mb-2"><i class="bi bi-search me-2"></i>Buscar Producto</label>
+                    <input type="text" class="form-control form-control-lg" placeholder="Escribe el nombre o código..."
+                        [(ngModel)]="busqueda" *ngIf="!productoSeleccionado">
+
+                    <!-- Resultados de búsqueda -->
+                    <div class="list-group mt-2" *ngIf="busqueda && productosFiltrados.length > 0">
+                        <button *ngFor="let p of productosFiltrados"
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                            (click)="seleccionarProducto(p)">
+                            <div>
+                                <strong>{{ p.nombreProducto }}</strong> <br>
+                                <small class="text-muted">{{ p.codigo }} | Categoría: {{ p.nombreCategoria }}</small>
+                            </div>
+                            <span class="badge bg-success">S/ {{ p.precioVenta }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selección de Lote y Cantidad -->
+            <div class="card shadow-sm border-0 border-start border-4 border-success" *ngIf="productoSeleccionado">
+                <div class="card-body">
+                    <h5 class="fw-bold text-success mb-3">Agregando: {{ productoSeleccionado.nombreProducto }}</h5>
+
+                    <label class="form-label fw-bold">Seleccione el Lote (FEFO)</label>
+                    <select class="form-select mb-3" [(ngModel)]="loteSeleccionado">
+                        <option [ngValue]="null" disabled>Seleccione un lote...</option>
+                        <option *ngFor="let l of lotesDisponibles" [ngValue]="l">
+                            Lote: {{ l.numeroLote }} | Vence: {{ l.fechaVencimiento | date:'dd/MM/yyyy' }} | Stock: {{ l.stockLote }}
+                        </option>
+                    </select>
+
+                    <div class="row align-items-end">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Cantidad</label>
+                            <input type="number" class="form-control" [(ngModel)]="cantidadAAgregar" min="1">
+                        </div>
+                        <div class="col-6 text-end">
+                            <button class="btn btn-success w-100" (click)="agregarAlCarrito()">
+                                <i class="bi bi-cart-plus me-1"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- COLUMNA DERECHA: CARRITO Y COBRO -->
+        <!-- ========================================== -->
+        <div class="col-md-5">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-sanmartin-primary text-white py-3">
+                    <h5 class="m-0"><i class="bi bi-cart me-2"></i>Detalle de Venta</h5>
+                </div>
+
+                <div class="card-body p-0 d-flex flex-column">
+                    <div class="p-3 border-bottom bg-light">
+                        <label class="fw-bold small mb-2"><i class="bi bi-person-badge me-1"></i> Cliente (Opcional)</label>
+
+                        <!-- Si ya hay un cliente seleccionado -->
+                        <div class="d-flex justify-content-between align-items-center bg-white p-2 border border-success rounded shadow-sm"
+                            *ngIf="clienteSeleccionado">
+                            <div>
+                                <strong class="text-success" style="font-size: 0.9rem;">{{ clienteSeleccionado.nombre }}</strong><br>
+                                <small class="text-muted" style="font-size: 0.75rem;">Doc: {{ clienteSeleccionado.numeroDocumento }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger p-1" (click)="quitarCliente()">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Si no hay cliente, mostramos el buscador -->
+                        <div class="input-group input-group-sm" *ngIf="!clienteSeleccionado">
+                            <select class="form-select" style="max-width: 90px;" [(ngModel)]="tipoDocumentoSeleccionado">
+                                <option value="DNI">DNI</option>
+                                <option value="RUC">RUC</option>
+                            </select>
+                            <input type="text" class="form-control" [placeholder]="'Ingresa ' + tipoDocumentoSeleccionado" 
+                                   [(ngModel)]="dniBusqueda" (keyup.enter)="buscarCliente()"
+                                   [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11">
+                            <button class="btn btn-outline-primary" (click)="buscarCliente()" [disabled]="buscandoCliente">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla del Carrito -->
+                    <div class="table-responsive flex-grow-1" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Precio</th>
+                                    <th>Sub.</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="cartService.getItems().length === 0">
+                                    <td colspan="5" class="text-center py-4 text-muted">Carrito vacío</td>
+                                </tr>
+                                <tr *ngFor="let item of cartService.getItems()">
+                                    <td class="ps-3">
+                                        <strong>{{ item.producto.nombreProducto }}</strong><br>
+                                        <small class="text-muted">Lote: {{ item.lote.numeroLote }}</small>
+                                    </td>
+                                    <td style="width: 100px;">
+                                        <div class="input-group input-group-sm">
+                                            <button class="btn btn-outline-secondary" (click)="cartService.actualizarCantidad(item.lote.idLote, -1)">-</button>
+                                            <input type="text" class="form-control text-center" [value]="item.cantidad" readonly>
+                                            <button class="btn btn-outline-secondary" (click)="cartService.actualizarCantidad(item.lote.idLote, 1)">+</button>
+                                        </div>
+                                    </td>
+                                    <td>S/ {{ item.producto.precioVenta }}</td>
+                                    <td class="fw-bold">S/ {{ item.producto.precioVenta * item.cantidad }}</td>
+                                    <td class="text-end pe-3">
+                                        <button class="btn btn-sm btn-outline-danger" (click)="cartService.eliminarItem(item.lote.idLote)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Opciones de Cobro -->
+                    <div class="p-3 border-top bg-light mt-auto">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Comprobante</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="tipoComprobante">
+                                    <option value="BOLETA">BOLETA</option>
+                                    <option value="FACTURA">FACTURA</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small">Método de Pago</label>
+                                <select class="form-select form-select-sm" [(ngModel)]="metodoPago">
+                                    <option value="EFECTIVO">EFECTIVO</option>
+                                    <option value="YAPE">YAPE</option>
+                                    <option value="PLIN">PLIN</option>
+                                    <option value="TARJETA">TARJETA</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="m-0 text-muted">Total:</h4>
+                            <h2 class="m-0 fw-bold text-success">S/ {{ cartService.totalPrice() | number:'1.2-2' }}</h2>
+                        </div>
+
+                        <button class="btn btn-success btn-lg w-100 fw-bold" (click)="registrarVenta()" [disabled]="cartService.getItems().length === 0">
+                            <i class="bi bi-check-circle me-2"></i> Cobrar Venta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- AQUÍ AFUERA INICIAN LOS MODALES (NO BORRAR ESTA SEPARACIÓN) -->
+<!-- ======================================================= -->
+
+<!-- BOTONES OCULTOS PARA ABRIR MODALES -->
+<button id="btnAbrirTicket" class="d-none" data-bs-toggle="modal" data-bs-target="#modalTicket"></button>
+<button id="btnAbrirModalCliente" class="d-none" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente"></button>
+
+<!-- MODAL DEL TICKET / COMPROBANTE -->
+<div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        
+        <div class="modal-content border-0 shadow" id="ticket-impresion" style="max-height: 90vh; display: flex; flex-direction: column;">
+            
+            <div class="modal-header bg-success text-white d-print-none">
+                <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Ticket Generado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- CUERPO DEL TICKET -->
+            <div class="modal-body p-4" style="overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #000;">
+                <ng-container *ngIf="ventaGenerada">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold m-0">FARMACIA SAN MARTÍN S.A.C.</h4>
+                        <p class="m-0">R.U.C.: 20512002090</p>
+                        <p class="m-0">CENTRAL: Cal. Victor Alzamora Nro. 147</p>
+                        <p class="m-0">La Victoria - Lima</p>
+                        <h5 class="fw-bold mt-3 text-uppercase">{{ ventaGenerada.tipoComprobante }} ELECTRÓNICA</h5>
+                        <p class="m-0">N° {{ ventaGenerada.numeroVenta }}</p>
+                    </div>
+
+                    <div class="mb-3" style="line-height: 1.2;">
+                        <div class="d-flex justify-content-between">
+                            <span>FECHA EMISIÓN:</span>
+                            <span>{{ ventaGenerada.fechaVenta | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>CAJERO:</span>
+                            <span>{{ ventaGenerada.nombreUsuario | uppercase }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>CLIENTE:</span>
+                            <span>{{ ventaGenerada.nombreCliente || 'VARIOS' | uppercase }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>DNI/RUC:</span>
+                            <span>{{ clienteSeleccionado ? clienteSeleccionado.numeroDocumento : '00000000' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="border-top border-dark border-1 my-2"></div>
+
+                    <!-- Tabla de Productos -->
+                    <table class="w-100 mb-2" style="font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th class="text-start">Cant. x Precio</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let d of ventaGenerada.detalles">
+                                <td class="text-start">
+                                    {{ d.nombreProducto | uppercase }} <br>
+                                    <small>{{ d.precioUnitario }} X {{ d.cantidad }} UND</small>
+                                </td>
+                                <td class="text-end">{{ d.subtotal | number:'1.2-2' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="border-top border-dark border-1 my-2"></div>
+
+                    <!-- Totales -->
+                    <div style="line-height: 1.2;">
+                        <div class="d-flex justify-content-between">
+                            <span>OP. GRAVADA:</span>
+                            <span>S/ {{ (ventaGenerada.total / 1.18) | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>I.G.V. (18%):</span>
+                            <span>S/ {{ (ventaGenerada.total - (ventaGenerada.total / 1.18)) | number:'1.2-2' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold mt-2">
+                            <span>IMPORTE TOTAL:</span>
+                            <span>S/ {{ ventaGenerada.total | number:'1.2-2' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="border-top border-dark border-1 my-2"></div>
+
+                    <div class="d-flex justify-content-between">
+                        <span>MÉTODO PAGO:</span>
+                        <span>{{ ventaGenerada.metodoPago }}</span>
+                    </div>
+
+                    <div class="text-center mt-4" style="font-size: 10px;">
+                        <p>¡Gracias por su compra!</p>
+                        <p>No se aceptan devoluciones de dinero.</p>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- PIE DEL MODAL -->
+            <div class="modal-footer bg-light d-print-none">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sanmartin" (click)="imprimirTicket()">
+                    <i class="bi bi-printer me-2"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL: NUEVO CLIENTE -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-sanmartin-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Tipo Doc.</label>
+                        <select class="form-select" [(ngModel)]="tipoDocumentoSeleccionado">
+                            <option value="DNI">DNI</option>
+                            <option value="RUC">RUC</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Número de Documento</label>
+                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.numeroDocumento"
+                            [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11" readonly>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Nombre Completo / Razón Social</label>
+                    <input type="text" class="form-control" [(ngModel)]="nuevoCliente.nombre" placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Teléfono <small class="text-muted">(Opcional)</small></label>
+                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.telefono" placeholder="Ej: 999888777">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Dirección <small class="text-muted">(Opcional)</small></label>
+                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.direccion" placeholder="Ej: Av. Los Álamos 123">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" id="btnCerrarModalCliente" class="d-none" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sanmartin" (click)="guardarNuevoCliente()">Guardar Cliente</button>
+            </div>
+        </div>
+    </div>
+</div>

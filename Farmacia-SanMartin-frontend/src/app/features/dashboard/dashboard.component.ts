@@ -45,13 +45,7 @@ export class DashboardComponent {
       ruta: '/productos', 
       roles: ['ADMIN'] 
     },
-    { 
-      titulo: 'Inventario y Lotes', 
-      descripcion: 'Ver stock, vencimientos y movimientos', 
-      icono: 'bi-box-seam-fill', 
-      ruta: '/inventario', 
-      roles: ['ADMIN'] 
-    },
+    
     { 
       titulo: 'Compras y Proveedores', 
       descripcion: 'Registrar ingreso de mercadería', 

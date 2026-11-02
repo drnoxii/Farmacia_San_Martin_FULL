@@ -1,9 +1,10 @@
 /* Estilo base de la tarjeta */
 .card-modulo {
-  transition: all 0.3s ease;
-  border-radius: 15px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 16px; /* Bordes más redondeados, estilo moderno */
   cursor: pointer;
   background-color: #ffffff;
+  border-bottom: 4px solid transparent; /* Borde invisible por defecto */
 }
 
 /* Efecto al pasar el mouse (se levanta y proyecta sombra) */
@@ -18,10 +19,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
-  background-color: rgba(0, 137, 123, 0.1); /* Un fondo clarito de tu color primario */
+  background-color: rgba(0, 137, 123, 0.08); /* Fondo clarito de tu color primario */
   color: var(--color-primario); /* El color del icono */
   transition: all 0.3s ease;
 }
@@ -36,4 +37,7 @@
   background-color: var(--color-primario);
   color: #ffffff;
   transform: scale(1.1);
+}
+.card-title {
+  font-size: 1.15rem;
 }
