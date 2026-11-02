@@ -6,6 +6,7 @@
   
   --color-texto-oscuro: #2C3E50; 
   --color-fondo-claro: #F4F7F6; /* Gris muy claro con tinte verde */
+  --color-borde: #ced4da;
 }
 
 body {
