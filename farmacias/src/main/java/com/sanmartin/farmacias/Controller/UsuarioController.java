@@ -1,3 +1,4 @@
+
 package com.sanmartin.farmacias.Controller;
 
 import com.sanmartin.farmacias.Dto.UsuarioDTO;
@@ -12,15 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping({"/api/v1/usuario"})
+@RequestMapping("/api/v1/usuario")
 @Tag(name = "Usuario", description = "CRUD del Usuario")
 public class UsuarioController {
 
     private final IUsuarioService usuarioService;
 
-    public UsuarioController(IUsuarioService usuarioServices) {
-
-        this.usuarioService = usuarioServices;
+    public UsuarioController(IUsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
     }
 
     @GetMapping("/{id}")
@@ -43,14 +43,24 @@ public class UsuarioController {
 
     @GetMapping("/estado/{estado}")
     @Operation(summary = "Listar usuarios por estado")
-    public ResponseEntity<List<UsuarioDTO>> listarPorEstado(@PathVariable EstadoGeneral estado) {
+    public ResponseEntity<List<UsuarioDTO>> listarPorEstado(
+            @PathVariable EstadoGeneral estado) {
         return ResponseEntity.ok(usuarioService.listarPorEstado(estado));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar datos del usuario")
+    public ResponseEntity<UsuarioDTO> actualizar(
+            @PathVariable Long id,
+            @RequestBody UsuarioDTO datos) {
+        return ResponseEntity.ok(usuarioService.actualizar(id, datos));
     }
 
     @PutMapping("/{id}/estado")
     @Operation(summary = "Activar o desactivar usuario")
-    public ResponseEntity<UsuarioDTO> cambiarEstado(@PathVariable Long id,
-                                                    @RequestParam EstadoGeneral estado) {
+    public ResponseEntity<UsuarioDTO> cambiarEstado(
+            @PathVariable Long id,
+            @RequestParam EstadoGeneral estado) {
         return ResponseEntity.ok(usuarioService.cambiarEstado(id, estado));
     }
 

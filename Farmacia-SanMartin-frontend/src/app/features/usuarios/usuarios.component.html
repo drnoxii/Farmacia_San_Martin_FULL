@@ -1,0 +1,322 @@
+
+<div class="usuarios-container">
+
+  <!-- ENCABEZADO -->
+  <div class="encabezado">
+    <div>
+      <h1>Gestión de Usuarios</h1>
+      <p>Administración de cuentas de Farmacia San Martín</p>
+    </div>
+
+    <div class="acciones-encabezado">
+      <button class="btn-nuevo" (click)="abrirFormulario()">
+        + Nuevo usuario
+      </button>
+
+      <button class="btn-actualizar" (click)="cargarUsuarios()">
+        ↻ Actualizar listado
+      </button>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="resumen">
+
+    <div class="resumen-card">
+      <span>Total de usuarios</span>
+      <strong>{{ totalUsuarios }}</strong>
+    </div>
+
+    <div class="resumen-card">
+      <span>Usuarios activos</span>
+      <strong>{{ totalActivos }}</strong>
+    </div>
+
+    <div class="resumen-card">
+      <span>Administradores</span>
+      <strong>{{ totalAdministradores }}</strong>
+    </div>
+
+    <div class="resumen-card">
+      <span>Cajeros</span>
+      <strong>{{ totalCajeros }}</strong>
+    </div>
+
+  </div>
+
+  <!-- MENSAJES -->
+  <div class="mensaje" *ngIf="mensaje">
+    {{ mensaje }}
+  </div>
+
+  <div class="error" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <!-- LISTADO -->
+  <section class="panel">
+
+    <h2>Listado de usuarios</h2>
+
+    <!-- FILTROS -->
+    <div class="filtros">
+
+      <input
+        type="text"
+        placeholder="Buscar por nombre, DNI o correo..."
+        [(ngModel)]="busqueda"
+        (ngModelChange)="filtrarUsuarios()">
+
+      <select
+        [(ngModel)]="filtroRol"
+        (ngModelChange)="filtrarUsuarios()">
+
+        <option value="">Todos los roles</option>
+        <option value="ADMIN">Administrador</option>
+        <option value="CAJERO">Cajero</option>
+
+      </select>
+
+      <select
+        [(ngModel)]="filtroEstado"
+        (ngModelChange)="filtrarUsuarios()">
+
+        <option value="">Todos los estados</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="INACTIVO">Inactivo</option>
+
+      </select>
+
+      <button class="btn-limpiar" (click)="limpiarFiltros()">
+        Limpiar
+      </button>
+
+    </div>
+
+    <!-- CARGANDO -->
+    <div *ngIf="cargando" class="cargando">
+      Cargando usuarios...
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-contenedor" *ngIf="!cargando">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let usuario of usuariosFiltrados">
+
+            <td>{{ usuario.idUsuario }}</td>
+            <td>{{ usuario.nombre || '-' }}</td>
+            <td>{{ usuario.numeroDocumento || '-' }}</td>
+            <td>{{ usuario.correo }}</td>
+            <td>{{ usuario.telefono || '-' }}</td>
+
+            <td>
+              <span class="rol"
+                [ngClass]="usuario.rol === 'ADMIN' ? 'administrador' : 'cajero'">
+                {{ usuario.rol }}
+              </span>
+            </td>
+
+            <td>
+              <span class="estado"
+                [ngClass]="usuario.estado === 'ACTIVO' ? 'activo' : 'inactivo'">
+                {{ usuario.estado }}
+              </span>
+            </td>
+
+            <!-- ACCIONES -->
+            <td class="acciones">
+
+              <button
+                type="button"
+                class="btn-editar"
+                (click)="editarUsuario(usuario)"
+                title="Editar usuario">
+                ✏️
+              </button>
+
+              <button
+                class="btn-estado"
+                [class.activar]="usuario.estado === 'INACTIVO'"
+                [class.desactivar]="usuario.estado === 'ACTIVO'"
+                (click)="cambiarEstado(usuario)">
+
+                {{ usuario.estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}
+
+              </button>
+
+              <button
+                class="btn-eliminar"
+                (click)="eliminarUsuario(usuario)">
+                Eliminar
+              </button>
+
+            </td>
+
+          </tr>
+
+          <tr *ngIf="usuariosFiltrados.length === 0">
+            <td colspan="8" class="sin-registros">
+              No se encontraron usuarios registrados.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <!-- TOTAL -->
+    <div class="total-registros">
+      Mostrando {{ usuariosFiltrados.length }}
+      de {{ usuarios.length }} usuarios
+    </div>
+
+  </section>
+
+</div>
+
+<!-- MODAL DE REGISTRO -->
+<div class="modal-fondo" *ngIf="mostrarFormulario">
+
+  <div class="modal-contenido">
+
+    <div class="modal-encabezado">
+      <div>
+        <h2>Registrar nuevo usuario</h2>
+        <p>Completa los datos para crear una nueva cuenta.</p>
+      </div>
+
+      <button
+        type="button"
+        class="btn-cerrar"
+        (click)="cerrarFormulario()">
+        ×
+      </button>
+    </div>
+
+    <form (ngSubmit)="registrarUsuario()" #formulario="ngForm">
+
+      <div class="formulario-grid">
+
+        <div class="campo">
+          <label>Nombre completo *</label>
+          <input
+            type="text"
+            name="nombre"
+            [(ngModel)]="nuevoUsuario.nombre"
+            placeholder="Ingrese nombres y apellidos"
+            required>
+        </div>
+
+        <div class="campo">
+          <label>DNI *</label>
+          <input
+            type="text"
+            name="numeroDocumento"
+            [(ngModel)]="nuevoUsuario.numeroDocumento"
+            placeholder="Ingrese 8 dígitos"
+            maxlength="8"
+            required>
+        </div>
+
+        <div class="campo">
+          <label>Teléfono</label>
+          <input
+            type="text"
+            name="telefono"
+            [(ngModel)]="nuevoUsuario.telefono"
+            placeholder="Ingrese teléfono"
+            maxlength="9">
+        </div>
+
+        <div class="campo">
+          <label>Correo electrónico *</label>
+          <input
+            type="email"
+            name="correo"
+            [(ngModel)]="nuevoUsuario.correo"
+            placeholder="ejemplo@correo.com"
+            required>
+        </div>
+
+        <div class="campo campo-completo">
+          <label>Dirección</label>
+          <input
+            type="text"
+            name="direccion"
+            [(ngModel)]="nuevoUsuario.direccion"
+            placeholder="Ingrese dirección">
+        </div>
+
+        <div class="campo">
+          <label>Contraseña *</label>
+          <input
+            type="password"
+            name="password"
+            [(ngModel)]="nuevoUsuario.password"
+            placeholder="Ingrese contraseña"
+            required>
+        </div>
+
+        <div class="campo">
+          <label>Rol *</label>
+          <select
+            name="rol"
+            [(ngModel)]="nuevoUsuario.rol"
+            required>
+
+            <option value="ADMIN">Administrador</option>
+            <option value="CAJERO">Cajero</option>
+
+          </select>
+        </div>
+
+      </div>
+
+      <div class="nota-formulario">
+        Los campos marcados con * son obligatorios.
+      </div>
+
+      <div class="modal-acciones">
+
+        <button
+          type="button"
+          class="btn-cancelar"
+          (click)="cerrarFormulario()">
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn-guardar"
+          [disabled]="guardando || formulario.invalid">
+
+          {{ guardando ? 'Registrando...' : 'Guardar usuario' }}
+
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

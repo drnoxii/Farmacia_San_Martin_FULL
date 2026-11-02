@@ -3,8 +3,6 @@ package com.sanmartin.farmacias.Controller;
 
 import com.sanmartin.farmacias.Dto.CompraRequestDTO;
 import com.sanmartin.farmacias.Dto.CompraResponseDTO;
-import com.sanmartin.farmacias.Entity.EstadoCompra;
-import com.sanmartin.farmacias.Entity.Proveedor;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.ICompraService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,18 +47,6 @@ public class CompraController {
                         "Compra no encontrada con ID: " + id));
     }
 
-    @GetMapping("/proveedor/{idProveedor}")
-    @Operation(summary = "Busca las compras por Proveedor")
-    public ResponseEntity<List<CompraResponseDTO>> buscarPorProveedor(@PathVariable Long idProveedor){
-        return ResponseEntity.ok(compraService.listarPorIdProveedor(idProveedor));
-    }
-
-    @GetMapping("/proveedor/nombre/{nombreProveedor}")
-    @Operation(summary = "Busca por nombre. Para la búsqueda de proveedores por nombre")
-    public ResponseEntity<List<CompraResponseDTO>> buscarPorNombreProveedor(@PathVariable String nombreProveedor){
-        return ResponseEntity.ok(compraService.listarPorNombreProveedor(nombreProveedor));
-    }
-
     @PostMapping
     @Operation(summary = "Registrar compra (crea detalles y lotes)")
     @ApiResponses({
@@ -71,11 +57,5 @@ public class CompraController {
     public ResponseEntity<CompraResponseDTO> registrar(
             @RequestBody @Valid CompraRequestDTO dto) {
         return new ResponseEntity<>(compraService.registrar(dto), HttpStatus.CREATED);
-    }
-
-    @PatchMapping("/{id}/estado")
-    @Operation(summary = "Actualizar el Estado de la Compra")
-    public ResponseEntity<CompraResponseDTO> actualizarEstado(@PathVariable Long id, @RequestParam EstadoCompra estadoCompra){
-        return ResponseEntity.ok(compraService.actualizarEstado(id, estadoCompra));
     }
 }

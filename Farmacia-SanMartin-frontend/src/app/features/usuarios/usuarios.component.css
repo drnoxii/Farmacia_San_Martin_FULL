@@ -1,0 +1,555 @@
+
+/* =====================================
+   CONTENEDOR PRINCIPAL
+===================================== */
+
+.usuarios-container {
+  padding: 35px 45px;
+  background: #f3f7f6;
+  min-height: calc(100vh - 75px);
+  box-sizing: border-box;
+}
+
+/* =====================================
+   ENCABEZADO
+===================================== */
+
+.encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 35px;
+}
+
+.encabezado h1 {
+  color: #173e50;
+  font-size: 30px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.encabezado p {
+  color: #718096;
+  font-size: 17px;
+  margin: 0;
+}
+
+.acciones-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.btn-nuevo,
+.btn-actualizar {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-nuevo {
+  background: #ffffff;
+  color: #008f83;
+  border: 1px solid #008f83;
+}
+
+.btn-nuevo:hover {
+  background: #e4f5f1;
+}
+
+.btn-actualizar {
+  background: #008f83;
+  color: white;
+}
+
+.btn-actualizar:hover {
+  background: #006f67;
+}
+
+/* =====================================
+   TARJETAS DE RESUMEN
+===================================== */
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  margin-bottom: 35px;
+}
+
+.resumen-card {
+  background: #ffffff;
+  padding: 30px;
+  min-height: 145px;
+  border-radius: 15px;
+  border-left: 6px solid #009688;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.resumen-card span {
+  color: #718096;
+  font-size: 15px;
+}
+
+.resumen-card strong {
+  color: #173e50;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+/* =====================================
+   MENSAJES
+===================================== */
+
+.mensaje,
+.error {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 22px;
+}
+
+.mensaje {
+  background: #e1f5eb;
+  color: #087443;
+}
+
+.error {
+  background: #fde8e8;
+  color: #c53030;
+}
+
+/* =====================================
+   PANEL DEL LISTADO
+===================================== */
+
+.panel {
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.06);
+  margin-top: 10px;
+}
+
+.panel h2 {
+  color: #173e50;
+  font-size: 23px;
+  font-weight: 500;
+  margin: 0 0 27px;
+}
+
+/* =====================================
+   FILTROS Y BÚSQUEDA
+===================================== */
+
+.filtros {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) 190px 190px auto;
+  gap: 15px;
+  margin-bottom: 27px;
+}
+
+.filtros input,
+.filtros select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 53px;
+  padding: 12px 15px;
+  border: 1px solid #d6e0e5;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  background: white;
+}
+
+.filtros input:focus,
+.filtros select:focus {
+  border-color: #009688;
+  box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.10);
+}
+
+.btn-limpiar {
+  background: #647784;
+  color: white;
+  border: none;
+  padding: 0 22px;
+  height: 53px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.btn-limpiar:hover {
+  background: #475b67;
+}
+
+/* =====================================
+   TABLA DE USUARIOS
+===================================== */
+
+.tabla-contenedor {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 850px;
+}
+
+thead {
+  background: #19485c;
+  color: white;
+}
+
+th {
+  padding: 20px 15px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+td {
+  padding: 19px 15px;
+  font-size: 14px;
+  color: #334155;
+  border-bottom: 1px solid #e7ecef;
+}
+
+tbody tr:hover {
+  background: #f7fbfa;
+}
+
+/* =====================================
+   ETIQUETAS DE ROL
+===================================== */
+
+.rol {
+  display: inline-block;
+  padding: 8px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.administrador {
+  background: #e5e7ff;
+  color: #4546a5;
+}
+
+.cajero {
+  background: #e1f5ef;
+  color: #00866d;
+}
+
+/* =====================================
+   ETIQUETAS DE ESTADO
+===================================== */
+
+.estado {
+  display: inline-block;
+  padding: 8px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activo {
+  background: #dcf5e7;
+  color: #16834b;
+}
+
+.inactivo {
+  background: #ffe5e5;
+  color: #cf3030;
+}
+
+/* =====================================
+   BOTONES DE ACCIONES
+===================================== */
+
+.acciones {
+  white-space: nowrap;
+}
+
+.btn-estado,
+.btn-eliminar {
+  padding: 10px 13px;
+  border: none;
+  border-radius: 7px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: 0.2s;
+}
+
+.btn-estado.desactivar {
+  background: #e69a28;
+}
+
+.btn-estado.activar {
+  background: #0c9e70;
+}
+
+.btn-eliminar {
+  background: #e84141;
+}
+
+.btn-estado:hover,
+.btn-eliminar:hover {
+  opacity: 0.82;
+}
+
+/* =====================================
+   INFORMACIÓN INFERIOR
+===================================== */
+
+.total-registros {
+  text-align: right;
+  color: #718096;
+  font-size: 14px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid #edf0f2;
+}
+
+.sin-registros {
+  text-align: center;
+  padding: 40px 15px;
+  color: #718096;
+}
+
+.cargando {
+  text-align: center;
+  padding: 25px;
+  color: #008f83;
+  font-weight: 600;
+}
+
+/* =====================================
+   VENTANA EMERGENTE
+===================================== */
+
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 45, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-contenido {
+  background: #ffffff;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 15px;
+  padding: 32px;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.20);
+  box-sizing: border-box;
+}
+
+.modal-encabezado {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 20px;
+}
+
+.modal-encabezado h2 {
+  margin: 0 0 9px;
+  color: #173e50;
+  font-size: 23px;
+}
+
+.modal-encabezado p {
+  margin: 0;
+  color: #718096;
+  font-size: 14px;
+}
+
+.btn-cerrar {
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+/* =====================================
+   CAMPOS DEL FORMULARIO
+===================================== */
+
+.formulario-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 23px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.campo label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid #d5dde5;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+  background: white;
+}
+
+.campo input:focus,
+.campo select:focus {
+  border-color: #008f83;
+  box-shadow: 0 0 0 2px rgba(0, 143, 131, 0.10);
+}
+
+.campo-completo {
+  grid-column: 1 / -1;
+}
+
+.nota-formulario {
+  margin-top: 22px;
+  font-size: 12px;
+  color: #718096;
+}
+
+/* =====================================
+   BOTONES DEL FORMULARIO
+===================================== */
+
+.modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancelar,
+.btn-guardar {
+  padding: 13px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  background: #e9eef2;
+  color: #334155;
+}
+
+.btn-guardar {
+  background: #008f83;
+  color: white;
+}
+
+.btn-guardar:hover {
+  background: #006f67;
+}
+
+.btn-guardar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =====================================
+   DISEÑO RESPONSIVE
+===================================== */
+
+@media (max-width: 1000px) {
+  .resumen {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filtros {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .usuarios-container {
+    padding: 20px 15px;
+  }
+
+  .encabezado {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .acciones-encabezado {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .resumen {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 20px 15px;
+  }
+
+  .formulario-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-completo {
+    grid-column: auto;
+  }
+
+  .modal-contenido {
+    padding: 22px;
+  }
+
+  .modal-acciones {
+    flex-direction: column-reverse;
+  }
+
+  .btn-cancelar,
+  .btn-guardar {
+    width: 100%;
+  }
+   
+}

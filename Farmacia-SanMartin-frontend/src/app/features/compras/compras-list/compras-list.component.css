@@ -1,6 +1,5 @@
 /* ===== Variables adicionales ===== */
-/* ===== Variables adicionales ===== */
-:root, :host {
+:host {
   --color-primario-oscuro: #00695C;
   --color-primario-suave: rgba(0, 137, 123, 0.15);
   --color-acento-oscuro: #3d8b40;
@@ -10,7 +9,7 @@
 }
 
 /* ===== Contenedor del modal ===== */
-.modal .modal-content {
+#modalNuevaCompra .modal-content {
   border: none;
   border-radius: var(--radio-modal);
   overflow: hidden;
@@ -19,12 +18,12 @@
 }
 
 /* Animación de entrada suave */
-.modal.fade .modal-dialog {
+#modalNuevaCompra.fade .modal-dialog {
   transform: translateY(-20px) scale(0.97);
   transition: transform 0.3s ease-out;
 }
 
-.modal.show .modal-dialog {
+#modalNuevaCompra.show .modal-dialog {
   transform: translateY(0) scale(1);
 }
 
@@ -35,43 +34,43 @@
 }
 
 /* ===== Header ===== */
-.modal .modal-header {
+#modalNuevaCompra .modal-header {
   padding: 1.1rem 1.5rem;
   border-bottom: none;
   background-image: linear-gradient(135deg, var(--color-primario), var(--color-primario-oscuro));
 }
 
-.modal .modal-title {
+#modalNuevaCompra .modal-title {
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
-.modal .btn-close {
+#modalNuevaCompra .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%);
   opacity: 0.8;
   transition: opacity 0.2s, transform 0.2s;
 }
 
-.modal .btn-close:hover {
+#modalNuevaCompra .btn-close:hover {
   opacity: 1;
   transform: rotate(90deg);
 }
 
 /* ===== Body ===== */
-.modal .modal-body {
+#modalNuevaCompra .modal-body {
   padding: 1.5rem;
   color: var(--color-texto-oscuro);
 }
 
-.modal .form-label {
+#modalNuevaCompra .form-label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-texto-oscuro);
   margin-bottom: 0.35rem;
 }
 
-.modal .form-control,
-.modal .form-select {
+#modalNuevaCompra .form-control,
+#modalNuevaCompra .form-select {
   border: 1.5px solid var(--color-borde, #ced4da);
   border-radius: 10px;
   padding: 0.6rem 0.85rem;
@@ -79,28 +78,28 @@
   transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
-.modal .form-select {
+#modalNuevaCompra .form-select {
   cursor: pointer;
 }
 
-.modal .form-control::placeholder {
+#modalNuevaCompra .form-control::placeholder {
   color: #a3b0ab;
   font-size: 0.9rem;
 }
 
-.modal .form-control:hover,
-.modal .form-select:hover {
+#modalNuevaCompra .form-control:hover,
+#modalNuevaCompra .form-select:hover {
   border-color: #b9c9c5;
 }
 
-.modal .form-control:focus,
-.modal .form-select:focus {
+#modalNuevaCompra .form-control:focus,
+#modalNuevaCompra .form-select:focus {
   border-color: var(--color-primario);
   box-shadow: 0 0 0 4px var(--color-primario-suave);
 }
 
-/* Campos de solo lectura (totales, códigos, etc.) */
-.modal .form-control[readonly] {
+/* Campo Total (solo lectura) */
+#modalNuevaCompra .form-control[readonly] {
   background-color: var(--color-fondo-claro);
   border-style: dashed;
   font-weight: 700;
@@ -110,37 +109,37 @@
 }
 
 /* Quitar flechas de input number */
-.modal input[type="number"]::-webkit-outer-spin-button,
-.modal input[type="number"]::-webkit-inner-spin-button {
+#modalNuevaCompra input[type="number"]::-webkit-outer-spin-button,
+#modalNuevaCompra input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.modal input[type="number"] {
+#modalNuevaCompra input[type="number"] {
   -moz-appearance: textfield;
 }
 
 /* ===== Footer ===== */
-.modal .modal-footer {
+#modalNuevaCompra .modal-footer {
   border-top: 1px solid var(--color-borde);
   padding: 1rem 0 0;
   margin-top: 1.25rem;
   gap: 0.5rem;
 }
 
-.modal .btn {
+#modalNuevaCompra .btn {
   border-radius: 10px;
   padding: 0.55rem 1.3rem;
   font-weight: 500;
   transition: transform 0.15s, box-shadow 0.2s, background-color 0.2s;
 }
 
-.modal .btn:active {
+#modalNuevaCompra .btn:active {
   transform: scale(0.97);
 }
 
-/* Botón principal */
-.modal .btn-primary {
+/* Botón principal: usa el verde de acción de tu paleta */
+#modalNuevaCompra .btn-primary {
   --bs-btn-bg: var(--color-acento);
   --bs-btn-border-color: var(--color-acento);
   --bs-btn-hover-bg: var(--color-acento-oscuro);
@@ -150,11 +149,11 @@
   --bs-btn-focus-shadow-rgb: 76, 175, 80;
 }
 
-.modal .btn-primary:hover {
+#modalNuevaCompra .btn-primary:hover {
   box-shadow: 0 6px 14px rgba(76, 175, 80, 0.3);
 }
 
-.modal .btn-secondary {
+#modalNuevaCompra .btn-secondary {
   --bs-btn-bg: transparent;
   --bs-btn-color: var(--color-texto-suave);
   --bs-btn-border-color: var(--color-borde);
@@ -168,26 +167,26 @@
 }
 
 /* ===== Scrollbar del body ===== */
-.modal .modal-body::-webkit-scrollbar {
+#modalNuevaCompra .modal-body::-webkit-scrollbar {
   width: 8px;
 }
 
-.modal .modal-body::-webkit-scrollbar-thumb {
+#modalNuevaCompra .modal-body::-webkit-scrollbar-thumb {
   background: #c5d3cf;
   border-radius: 10px;
 }
 
-.modal .modal-body::-webkit-scrollbar-thumb:hover {
+#modalNuevaCompra .modal-body::-webkit-scrollbar-thumb:hover {
   background: var(--color-primario);
 }
 
 /* ===== Responsive ===== */
 @media (max-width: 576px) {
-  .modal .modal-body {
+  #modalNuevaCompra .modal-body {
     padding: 1.15rem;
   }
 
-  .modal .modal-footer .btn {
+  #modalNuevaCompra .modal-footer .btn {
     flex: 1;
   }
 }
