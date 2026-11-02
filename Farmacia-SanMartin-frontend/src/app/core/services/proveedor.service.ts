@@ -19,7 +19,7 @@ export class ProveedorService {
     return this.http.get<Proveedor>(`${this.apiUrl}/${id}`);
   }
 
-  crearProveedor(proveedor: Proveedor): Observable<Proveedor> {
+  crearProveedor(proveedor: any): Observable<Proveedor> {
     return this.http.post<Proveedor>(this.apiUrl, proveedor);
   }
 

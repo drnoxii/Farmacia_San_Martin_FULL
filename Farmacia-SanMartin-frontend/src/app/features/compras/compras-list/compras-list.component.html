@@ -4,17 +4,29 @@
         <h2 class="fw-bold text-dark m-0">
             <i class="bi bi-cart-check me-2"></i>Historial de Compras
         </h2>
-        <button class="btn btn-sanmartin" data-bs-toggle="modal" data-bs-target="#modalNuevaCompra">
-            <i class="bi bi-plus-circle me-1"></i> Nueva Compra
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Proveedor
+            </button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaCompra">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Compra
+            </button>
+        </div>
     </div>
 
     <!-- Buscador -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <input type="text" class="form-control" placeholder="Buscar compra por proveedor, usuario o ID..."
-                [(ngModel)]="busqueda">
-        </div>
+    <div class="input-group input-group-sm mb-3 p-2">
+        <select class="form-select" style="max-width: 140px" [(ngModel)]="tipoBusqueda">
+            <option value="proveedor">PROVEEDOR</option>
+            <option value="id">ID COMPRA</option>
+        </select>
+        <input type="text" class="form-control" [(ngModel)]="terminoBusqueda" [placeholder]="tipoBusqueda === 'id' ? 'Ej: 1, 5, 12...' : 'Ej: Farma SAC, Distribuidora...'" (keyup.enter)="buscarCompras()">
+        <button class="btn btn-outline-primary" type="button" (click)="buscarCompras()" title="Buscar">
+            <i class="bi bi-search"></i>
+        </button>
+        <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()" title="Restaurar lista">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
     </div>
 
     <!-- Tabla de Compras -->
@@ -33,7 +45,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (c of compras; track c.idCompra) {
+                    @for (c of comprasFiltradas; track c.idCompra) {
                     <tr>
                         <td>
                             @for (d of (c.detalleCompra || c.detalles); track $index) {
@@ -43,7 +55,7 @@
                         <td>{{c.razonSocialProveedor}}</td>
                         <td>{{c.nombreUsuario}}</td>
                         <td>{{c.fechaCompra| date: 'dd/MM/yyyy'}}</td>
-                        <td class="text-end">{{c.totalCompra| currency: 'USD'}}</td>
+                        <td class="text-end">{{c.totalCompra| currency: 'PEN'}}</td>
                         <td class="text-center">
                             <span class="badge rounded-pill" [ngClass]="{
                             'bg-success': c.estado === 'RECIBIDA',
@@ -56,12 +68,16 @@
                                 data-bs-target="#modalDetalleCompra" (click)="verDetalles(c)">
                                 <i class="bi bi-receipt"></i> Ver
                             </button>
+                            <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalCambiarEstado"
+                            (click)="verEstado(c)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
                         </td>
                     </tr>
                     } @empty {
                     <tr>
                         <td colspan="7" class="text-center text-muted py-4">
-                            No se encontraron compras.
+                            No se encontraron compras con el criterio de búsqueda.
                         </td>
                     </tr>
                     }
@@ -129,8 +145,8 @@
                             </td>
                             <td class="text-center">{{ d.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
                             <td class="text-center">{{ d.cantidad }}</td>
-                            <td class="text-end">{{ d.precioCosto | currency:'USD' }}</td>
-                            <td class="text-end pe-4 fw-bold">{{ d.subtotal | currency:'USD' }}</td>
+                            <td class="text-end">{{ d.precioCosto | currency:'PEN' }}</td>
+                            <td class="text-end pe-4 fw-bold">{{ d.subtotal | currency:'PEN' }}</td>
                         </tr>
                         } @empty {
                         <tr>
@@ -160,50 +176,203 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form>
+                <form [formGroup]="formCompra" (ngSubmit)="guardarCompra()">
                     <div class="mb-3">
                         <label for="productos" class="form-label">Productos</label>
-                        <input type="text" class="form-control" id="productos"
-                            placeholder="Ingrese los productos de la compra">
+                        <select class="form-select" id="productos" formControlName="productos">
+                            <option value="" selected disabled>Seleccione un producto</option>
+                            <option *ngFor="let prod of productos" [value]="prod.idProducto">{{ prod.nombreProducto }}
+                            </option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="proveedor" class="form-label">Proveedor</label>
-                        <select class="form-select" id="proveedor">
+                        <select class="form-select" id="proveedor" formControlName="proveedor">
                             <option value="" selected disabled>Seleccione un proveedor</option>
-                            <option *ngFor="let prov of proveedor" [value]="prov.idProveedor">{{ prov.razonSocial }}</option>
+                            <option *ngFor="let prov of proveedor" [value]="prov.idProveedor">{{ prov.razonSocial }}
+                            </option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="usuario" class="form-label">Usuario</label>
-                        <input type="text" class="form-control" id="usuario"
-                            placeholder="Ingrese el nombre del usuario">
+                        <input type="number" class="form-control" id="usuario" formControlName="usuario"
+                            placeholder="Ingrese el ID del usuario">
                     </div>
                     <div class="mb-3">
                         <label for="cantidad" class="form-label">Cantidad</label>
-                        <input type="number" class="form-control" id="cantidad"
-                            placeholder="Ingrese la cantidad de productos">
+                        <input type="number" class="form-control" id="cantidad" formControlName="cantidad"
+                            (input)="calcularTotal()" placeholder="Ingrese la cantidad de productos">
                     </div>
                     <div class="mb-3">
                         <label for="precio" class="form-label">Precio</label>
-                        <input type="number" class="form-control" id="precio"
-                            placeholder="Ingrese el precio de los productos">
+                        <input type="number" class="form-control" id="precio" formControlName="precio"
+                            (input)="calcularTotal()" placeholder="Ingrese el precio de los productos">
                     </div>
                     <div class="mb-3">
                         <label for="lote" class="form-label">Lote</label>
-                        <input type="text" class="form-control" id="lote"
+                        <input type="text" class="form-control" id="lote" formControlName="lote"
                             placeholder="Ingrese el lote de los productos">
                     </div>
                     <div class="mb-3">
+                        <label for="vencimiento" class="form-label">Fecha de Vencimiento</label>
+                        <input type="date" class="form-control" id="vencimiento" formControlName="vencimiento"
+                            placeholder="Ingrese la fecha de vencimiento de los productos">
+                    </div>
+                    <div class="mb-3">
                         <label for="total" class="form-label">Total</label>
-                        <input type="number" class="form-control" id="total"
+                        <input type="number" class="form-control" id="total" formControlName="total"
                             placeholder="Total de la compra" readonly>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary">Crear Compra</button>
+                        <button type="submit" class="btn btn-primary">Crear Compra</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal de Nuevo Proveedor -->
+<div class="modal fade" id="modalNuevoProveedor" tabindex="-1" aria-labelledby="modalNuevoProveedorLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-sanmartin-primary text-white">
+                <h1 class="modal-title fs-5" id="modalNuevoProveedorLabel">Nuevo Proveedor</h1>
+                <button type="button" class="btn-close" id="closeModalButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="formProveedor" (ngSubmit)="guardarProveedor()">
+                    <div class="mb-3">
+                        <label for="razonSocial" class="form-label">Razón Social</label>
+                        <input type="text" class="form-control" id="razonSocial" formControlName="razonSocial">
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono" formControlName="telefono" maxlength="9"
+                            pattern="[0-9]{9}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="ruc" class="form-label">RUC</label>
+                        <input type="text" class="form-control" id="ruc" formControlName="ruc" maxlength="11"
+                            pattern="[0-9]{11}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="correo" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="correo" formControlName="correo">
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <input type="text" class="form-control" id="direccion" formControlName="direccion">
+                    </div>
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" formControlName="estado">
+                            <option value="" disabled selected>Seleccione un estado</option>
+                            <option value="ACTIVO">Activo</option>
+                            <option value="INACTIVO">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Crear Proveedor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Estado de Compra -->
+<div class="modal fade" id="modalCambiarEstado" tabindex="-1" aria-labelledby="modalCambiarEstadoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      
+      <!-- Header -->
+      <div class="modal-header text-white">
+        <h5 class="modal-title" id="modalCambiarEstadoLabel">
+          <i class="bi bi-arrow-repeat me-2"></i>Actualizar Estado de Compra
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Formulario -->
+      <form (ngSubmit)="actualizarEstado()">
+        <div class="modal-body">
+          <!-- Resumen de la compra seleccionada -->
+          <div class="p-3 mb-3 rounded-3" style="background-color: var(--color-fondo-claro, #f8fbf9); border: 1px dashed var(--color-borde);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">Producto:</span>
+                @for (d of (compraSeleccionada?.detalles || compraSeleccionada?.detalleCompra); track $index) {
+                    <strong class="text-dark">{{d.nombreProducto}}</strong>
+                }
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small">Proveedor:</span>
+              <span class="fw-semibold text-dark">{{ compraSeleccionada?.razonSocialProveedor }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small">Total:</span>
+              <span class="fw-bold" style="color: var(--color-primario-oscuro);">
+                {{ compraSeleccionada?.totalCompra | currency:'PEN':'symbol':'1.2-2' }}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted small">Estado actual:</span>
+              <span class="badge" [ngClass]="{
+                'bg-warning text-dark': compraSeleccionada?.estado === 'PENDIENTE',
+                'bg-success': compraSeleccionada?.estado === 'RECIBIDA',
+                'bg-danger': compraSeleccionada?.estado === 'ANULADA'
+              }">
+                {{ compraSeleccionada?.estado }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Selector de nuevo estado -->
+          <div class="mb-3">
+            <label for="nuevoEstado" class="form-label">
+              <i class="bi bi-tag me-1"></i>Nuevo Estado <span class="text-danger">*</span>
+            </label>
+            <select id="nuevoEstado" name="nuevoEstado" class="form-select" [(ngModel)]="nuevoEstadoSeleccionado"
+              required>
+              <option [ngValue]="null" disabled>Seleccione el nuevo estado</option>
+              <option value="PENDIENTE" [disabled]="compraSeleccionada?.estado === 'PENDIENTE'">
+                🕒 Pendiente
+              </option>
+              <option value="RECIBIDA" [disabled]="compraSeleccionada?.estado === 'RECIBIDA'">
+                ✅ Recibida (Ingresa stock)
+              </option>
+              <option value="ANULADA" [disabled]="compraSeleccionada?.estado === 'ANULADA'">
+                ❌ Anulada
+              </option>
+            </select>
+          </div>
+
+          <!-- Alerta informativa según el estado seleccionado -->
+          <div *ngIf="nuevoEstadoSeleccionado === 'RECIBIDA'" class="alert alert-success d-flex align-items-center py-2 px-3 small rounded-3" role="alert">
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            <div>Al marcar como <strong>RECIBIDA</strong>, los lotes y productos se registrarán en el inventario activo.</div>
+          </div>
+
+          <div *ngIf="nuevoEstadoSeleccionado === 'ANULADA'" class="alert alert-danger d-flex align-items-center py-2 px-3 small rounded-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <div>Esta acción marcará la compra como anulada. Confirme si está seguro.</div>
+          </div>
+        </div>
+
+        <!-- Footer con botones de acción -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === compraSeleccionada?.estado || cargando">
+            <span *ngIf="cargando" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            <i *ngIf="!cargando" class="bi bi-check-lg me-1" ></i>Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>

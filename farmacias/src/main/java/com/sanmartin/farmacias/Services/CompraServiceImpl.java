@@ -8,6 +8,7 @@ import com.sanmartin.farmacias.Entity.*;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -105,6 +106,25 @@ public class CompraServiceImpl implements ICompraService{
         }
 
         return toDto(compra);
+    }
+
+    @Override
+    @Transactional
+    public CompraResponseDTO actualizarEstado(Long id, EstadoCompra estadoCompra) {
+        Compra c = compraRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada"));
+        c.setEstado(estadoCompra);
+        return toDto(compraRepository.save(c));
+    }
+
+    @Override
+    public List<CompraResponseDTO> listarPorIdProveedor(Long idProveedor) {
+        return compraRepository.findByProveedor_idProveedor(idProveedor).stream().map(this::toDto).toList();
+    }
+
+    @Override
+    public List<CompraResponseDTO> listarPorNombreProveedor(String nombreProveedor) {
+        return compraRepository.findByProveedor_razonSocial(nombreProveedor).stream().map(this::toDto).toList();
     }
 
     private CompraResponseDTO toDto(Compra c) {
