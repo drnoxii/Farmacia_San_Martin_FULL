@@ -17,4 +17,5 @@ public interface ICompraService {
 
     List<CompraResponseDTO> listarPorIdProveedor(Long idProveedor);
     List<CompraResponseDTO> listarPorNombreProveedor(String nombreProveedor);
+    List<CompraResponseDTO> listarPornombreProducto(String nombreProducto);
 }
