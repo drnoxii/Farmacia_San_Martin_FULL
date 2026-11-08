@@ -1,4 +1,11 @@
 <div class="container-fluid py-3">
+
+    <!-- AVISO: sin caja abierta -->
+    <div class="alert alert-warning d-flex justify-content-between align-items-center" *ngIf="!cajaAbierta">
+        <span><i class="bi bi-exclamation-triangle me-2"></i>No tienes una caja abierta. Ábrela para poder cobrar.</span>
+        <a routerLink="/caja" class="btn btn-sm btn-warning">Ir a Caja</a>
+    </div>
+
     <div class="row g-3">
 
         <!-- ========================================== -->
@@ -85,7 +92,7 @@
                                 <option value="DNI">DNI</option>
                                 <option value="RUC">RUC</option>
                             </select>
-                            <input type="text" class="form-control" [placeholder]="'Ingresa ' + tipoDocumentoSeleccionado" 
+                            <input type="text" class="form-control" [placeholder]="'Ingresa ' + tipoDocumentoSeleccionado"
                                    [(ngModel)]="dniBusqueda" (keyup.enter)="buscarCliente()"
                                    [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11">
                             <button class="btn btn-outline-primary" (click)="buscarCliente()" [disabled]="buscandoCliente">
@@ -160,7 +167,8 @@
                             <h2 class="m-0 fw-bold text-success">S/ {{ cartService.totalPrice() | number:'1.2-2' }}</h2>
                         </div>
 
-                        <button class="btn btn-success btn-lg w-100 fw-bold" (click)="registrarVenta()" [disabled]="cartService.getItems().length === 0">
+                        <button class="btn btn-success btn-lg w-100 fw-bold" (click)="registrarVenta()"
+                                [disabled]="cartService.getItems().length === 0 || !cajaAbierta">
                             <i class="bi bi-check-circle me-2"></i> Cobrar Venta
                         </button>
                     </div>
@@ -181,9 +189,9 @@
 <!-- MODAL DEL TICKET / COMPROBANTE -->
 <div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-        
+
         <div class="modal-content border-0 shadow" id="ticket-impresion" style="max-height: 90vh; display: flex; flex-direction: column;">
-            
+
             <div class="modal-header bg-success text-white d-print-none">
                 <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Ticket Generado</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -216,7 +224,7 @@
                         </div>
                         <div class="d-flex justify-content-between">
                             <span>DNI/RUC:</span>
-                            <span>{{ clienteSeleccionado ? clienteSeleccionado.numeroDocumento : '00000000' }}</span>
+                            <span>{{ documentoTicket }}</span>
                         </div>
                     </div>
 

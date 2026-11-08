@@ -1,66 +1,85 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AlertService } from '../../core/services/alert.service';
 import { VentaService } from '../../core/services/venta.service';
 import { LoteService } from '../../core/services/lote.service';
 import { ProductoService } from '../../core/services/producto.service';
+import { CartService } from '../../core/services/cart.service';
+import { ClienteService } from '../../core/services/cliente.service';
+import { CajaService } from '../../core/services/caja.service';
 import { VentaRequest } from '../../core/interfaces/venta.interface';
 import { Producto } from '../../core/interfaces/producto.interface';
 import { VentaResponse } from '../../core/interfaces/venta-response.interface';
 import { Lote } from '../../core/interfaces/lote.interface';
-import { CartService } from '../../core/services/cart.service';
-import { ClienteService } from '../../core/services/cliente.service';
 import { Cliente } from '../../core/interfaces/cliente.interface';
 
 @Component({
   selector: 'app-ventas-pos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './ventas-pos.component.html',
   styleUrl: './ventas-pos.component.css'
 })
-export class VentasPosComponent {
+export class VentasPosComponent implements OnInit {
 
   private productoService = inject(ProductoService);
   private loteService = inject(LoteService);
   private ventaService = inject(VentaService);
   private alertService = inject(AlertService);
-
-
+  private cajaService = inject(CajaService);
   private clienteService = inject(ClienteService);
+  cartService = inject(CartService);
 
-  // Variables para cliente
+  // ---------- Caja ----------
+  idCaja: number | null = null;
+  cajaAbierta = false;
+
+  // ---------- Cliente ----------
   dniBusqueda: string = '';
   clienteSeleccionado: Cliente | null = null;
   buscandoCliente: boolean = false;
-   nuevoCliente = { numeroDocumento: '', nombre: '', telefono: '', direccion: '' };
-   tipoDocumentoSeleccionado: 'DNI' | 'RUC' = 'DNI';
+  nuevoCliente = { numeroDocumento: '', nombre: '', telefono: '', direccion: '' };
+  tipoDocumentoSeleccionado: 'DNI' | 'RUC' = 'DNI';
 
-  cartService = inject(CartService);
-
+  // ---------- Productos ----------
   busqueda: string = '';
   productos: Producto[] = [];
-
   productoSeleccionado: Producto | null = null;
   lotesDisponibles: Lote[] = [];
   cantidadAAgregar: number = 1;
   loteSeleccionado: Lote | null = null;
 
+  // ---------- Venta ----------
   tipoComprobante: 'BOLETA' | 'FACTURA' = 'BOLETA';
   metodoPago: 'EFECTIVO' | 'YAPE' | 'PLIN' | 'TARJETA' = 'EFECTIVO';
-  idCliente: number | null = null;
-
   ventaGenerada: VentaResponse | null = null;
+  documentoTicket = '00000000';
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.productoService.listar().subscribe(data => this.productos = data);
+    this.cargarCaja();
   }
 
-  // solo de cliente 
+  // Obtiene la caja ABIERTA del usuario logueado
+  cargarCaja(): void {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    this.cajaService.cajaAbierta(usuario.idUsuario).subscribe({
+      next: caja => {
+        this.idCaja = caja ? caja.idCaja : null;
+        this.cajaAbierta = !!caja;
+      },
+      error: () => {
+        this.idCaja = null;
+        this.cajaAbierta = false;
+      }
+    });
+  }
 
-buscarCliente() {
-    // Validamos estrictamente que sea 8 o 11 caracteres
+  // ========== CLIENTE ==========
+
+  buscarCliente(): void {
     const maxLength = this.tipoDocumentoSeleccionado === 'DNI' ? 8 : 11;
     if (!this.dniBusqueda || this.dniBusqueda.length !== maxLength) {
       this.alertService.error(`El ${this.tipoDocumentoSeleccionado} debe tener exactamente ${maxLength} dígitos`);
@@ -81,11 +100,11 @@ buscarCliente() {
           'Nuevo Cliente'
         ).then((confirmado) => {
           if (confirmado) {
-            this.nuevoCliente = { 
-              numeroDocumento: this.dniBusqueda, 
-              nombre: '', 
-              telefono: '', 
-              direccion: '' 
+            this.nuevoCliente = {
+              numeroDocumento: this.dniBusqueda,
+              nombre: '',
+              telefono: '',
+              direccion: ''
             };
             document.getElementById('btnAbrirModalCliente')?.click();
           }
@@ -94,8 +113,8 @@ buscarCliente() {
     });
   }
 
-  // 👇 ESTA ES LA MAGIA: Si es RUC (11), pone FACTURA. Si es DNI (8), pone BOLETA.
-  ajustarTipoComprobante(documento: string) {
+  // RUC (11) -> FACTURA, DNI (8) -> BOLETA
+  ajustarTipoComprobante(documento: string): void {
     if (documento.length === 11) {
       this.tipoComprobante = 'FACTURA';
     } else if (documento.length === 8) {
@@ -103,13 +122,12 @@ buscarCliente() {
     }
   }
 
-  guardarNuevoCliente() {
-    // Le pasamos el objeto exacto que pide la interfaz
+  guardarNuevoCliente(): void {
     this.clienteService.crearCliente(this.nuevoCliente).subscribe({
       next: (cli) => {
         this.clienteSeleccionado = cli;
         this.alertService.success('Cliente registrado');
-        this.ajustarTipoComprobante(cli.numeroDocumento); // Ajusta boleta o factura
+        this.ajustarTipoComprobante(cli.numeroDocumento);
         document.getElementById('btnCerrarModalCliente')?.click();
       },
       error: (err) => {
@@ -119,12 +137,13 @@ buscarCliente() {
     });
   }
 
-  quitarCliente() {
+  quitarCliente(): void {
     this.clienteSeleccionado = null;
     this.dniBusqueda = '';
-    this.tipoComprobante = 'BOLETA'; // Vuelve a la boleta anónima por defecto
+    this.tipoComprobante = 'BOLETA';
   }
 
+  // ========== PRODUCTOS ==========
 
   get productosFiltrados() {
     if (!this.busqueda) return [];
@@ -134,7 +153,7 @@ buscarCliente() {
     ).slice(0, 5);
   }
 
-  seleccionarProducto(p: Producto) {
+  seleccionarProducto(p: Producto): void {
     this.productoSeleccionado = p;
     this.busqueda = '';
     this.cantidadAAgregar = 1;
@@ -148,7 +167,7 @@ buscarCliente() {
     });
   }
 
-  agregarAlCarrito() {
+  agregarAlCarrito(): void {
     if (!this.loteSeleccionado || this.cantidadAAgregar <= 0) return;
 
     if (this.cantidadAAgregar > this.loteSeleccionado.stockLote) {
@@ -156,28 +175,31 @@ buscarCliente() {
       return;
     }
 
-    // 👇 USAMOS EL SERVICIO DEL CARRITO
     this.cartService.agregarProducto(this.productoSeleccionado!, this.loteSeleccionado, this.cantidadAAgregar);
 
     this.productoSeleccionado = null;
     this.loteSeleccionado = null;
   }
 
-  // Quitar y actualizar cantidad los maneja directamente el CartService en el HTML
+  // ========== VENTA ==========
 
-  registrarVenta() {
+  registrarVenta(): void {
     const carrito = this.cartService.getItems();
     if (carrito.length === 0) {
       this.alertService.error('El carrito está vacío');
       return;
     }
 
+    if (this.idCaja === null) {
+      this.alertService.error('Debes abrir una caja antes de vender. Ve a Administración → Gestión de Caja.');
+      return;
+    }
+
     const usuarioLogueado = JSON.parse(localStorage.getItem('usuario') || '{}');
-    const idCajaAbierta = 1; // Ajustar según tu lógica de caja
 
     const ventaRequest: VentaRequest = {
-      idCliente: this.idCliente,
-      idCaja: idCajaAbierta,
+      idCliente: this.clienteSeleccionado?.idCliente ?? null,
+      idCaja: this.idCaja,
       idUsuario: usuarioLogueado.idUsuario,
       tipoComprobante: this.tipoComprobante,
       metodoPago: this.metodoPago,
@@ -191,7 +213,9 @@ buscarCliente() {
       next: (res) => {
         this.alertService.success('Venta registrada correctamente');
         this.ventaGenerada = res;
-        this.cartService.vaciarCarrito(); // 👈 VACIAMOS EL CARRITO
+        this.documentoTicket = this.clienteSeleccionado?.numeroDocumento ?? '00000000';
+        this.cartService.vaciarCarrito();
+        this.quitarCliente();
         document.getElementById('btnAbrirTicket')?.click();
       },
       error: (err) => {
@@ -200,13 +224,13 @@ buscarCliente() {
     });
   }
 
-   imprimirTicket() {
+  imprimirTicket(): void {
     if (!this.ventaGenerada) {
       this.alertService.error('No hay ticket para imprimir');
       return;
     }
     setTimeout(() => {
       window.print();
-    }, 300); 
-}
+    }, 300);
+  }
 }

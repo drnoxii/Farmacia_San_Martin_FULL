@@ -1,0 +1,285 @@
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark m-0"><i class="bi bi-cash-stack me-2"></i>Gestión de Caja</h2>
+    <button class="btn btn-outline-secondary btn-sm" (click)="cargar()">
+      <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+    </button>
+  </div>
+
+  <div *ngIf="cargando" class="text-center py-5 text-muted">Cargando caja...</div>
+
+  <!-- ========== SIN CAJA ABIERTA ========== -->
+  <div *ngIf="!cargando && !cajaActual" class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-1">No tienes una caja abierta</h5>
+      <p class="text-muted">Abre una caja para poder registrar ventas en el punto de venta.</p>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Monto inicial (S/)</label>
+          <input type="number" min="0" step="0.10" class="form-control"
+                 [(ngModel)]="montoInicial" placeholder="Ej: 100.00">
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-sanmartin w-100" (click)="abrirCaja()">
+            <i class="bi bi-unlock me-1"></i> Abrir caja
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CAJA ABIERTA ========== -->
+  <ng-container *ngIf="!cargando && cajaActual as c">
+
+    <div class="d-flex align-items-center mb-3">
+      <span class="badge bg-success me-2">CAJA ABIERTA</span>
+      <span class="text-muted">
+        {{ c.nombreUsuario }} · desde {{ c.fechaApertura | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-3 mb-4">
+      <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Monto inicial</div>
+            <div class="fs-4 fw-bold">S/ {{ c.montoInicial | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total vendido ({{ c.cantidadVentas }} ventas)</div>
+            <div class="fs-4 fw-bold text-primary">S/ {{ c.totalVendido | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100 border-start border-success border-4">
+          <div class="card-body">
+            <div class="text-muted small">Efectivo esperado en caja</div>
+            <div class="fs-4 fw-bold text-success">S/ {{ c.montoEsperadoEfectivo | number:'1.2-2' }}</div>
+            <div class="small text-muted">inicial + ventas en efectivo</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Digital (no va al cajón)</div>
+            <div class="fs-4 fw-bold">
+              S/ {{ (c.ventasYape + c.ventasPlin + c.ventasTarjeta) | number:'1.2-2' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desglose por método de pago -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white fw-bold">Ventas por método de pago</div>
+      <div class="card-body">
+        <div class="row text-center g-3">
+          <div class="col-6 col-md-3">
+            <span class="badge bg-success mb-1">EFECTIVO</span>
+            <div class="fw-bold">S/ {{ c.ventasEfectivo | number:'1.2-2' }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="badge bg-purple mb-1">YAPE</span>
+            <div class="fw-bold">S/ {{ c.ventasYape | number:'1.2-2' }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="badge bg-info text-dark mb-1">PLIN</span>
+            <div class="fw-bold">S/ {{ c.ventasPlin | number:'1.2-2' }}</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="badge bg-primary mb-1">TARJETA</span>
+            <div class="fw-bold">S/ {{ c.ventasTarjeta | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ventas de la caja con detalle -->
+    <ng-container *ngTemplateOutlet="tablaVentas; context: { $implicit: c }"></ng-container>
+
+    <!-- Cierre de caja -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white fw-bold">Cerrar caja</div>
+      <div class="card-body">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Efectivo contado (S/)</label>
+            <input type="number" min="0" step="0.10" class="form-control"
+                   [(ngModel)]="montoContado" placeholder="Cuenta el efectivo del cajón">
+          </div>
+          <div class="col-md-4" *ngIf="diferenciaPrevia !== null">
+            <label class="form-label">Diferencia</label>
+            <div class="fs-5 fw-bold"
+                 [ngClass]="diferenciaPrevia === 0 ? 'text-success' : diferenciaPrevia > 0 ? 'text-warning' : 'text-danger'">
+              {{ diferenciaPrevia === 0 ? 'Cuadra' : diferenciaPrevia > 0 ? 'Sobrante' : 'Faltante' }}
+              · S/ {{ diferenciaPrevia | number:'1.2-2' }}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-danger w-100" (click)="cerrarCaja()">
+              <i class="bi bi-lock me-1"></i> Cerrar caja
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ========== DETALLE DE CAJA DEL HISTORIAL ========== -->
+  <ng-container *ngIf="cajaVista as v">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="fw-bold m-0">
+        Detalle de caja del {{ v.fechaApertura | date:'dd/MM/yyyy HH:mm' }}
+        <span class="badge ms-2" [ngClass]="v.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ v.estado }}</span>
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" (click)="cajaVista = null">Cerrar detalle</button>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small">Monto inicial</div>
+        <div class="fw-bold">S/ {{ v.montoInicial | number:'1.2-2' }}</div></div></div></div>
+      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small">Efectivo esperado</div>
+        <div class="fw-bold">S/ {{ v.montoEsperadoEfectivo | number:'1.2-2' }}</div></div></div></div>
+      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small">Efectivo contado</div>
+        <div class="fw-bold">{{ v.montoFinal !== null ? ('S/ ' + (v.montoFinal | number:'1.2-2')) : '-' }}</div></div></div></div>
+      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
+        <div class="text-muted small">Diferencia</div>
+        <div class="fw-bold" [ngClass]="(v.diferencia ?? 0) === 0 ? 'text-success' : (v.diferencia ?? 0) > 0 ? 'text-warning' : 'text-danger'">
+          {{ v.diferencia !== null ? ('S/ ' + (v.diferencia | number:'1.2-2')) : '-' }}</div></div></div></div>
+    </div>
+    <ng-container *ngTemplateOutlet="tablaVentas; context: { $implicit: v }"></ng-container>
+  </ng-container>
+
+  <!-- ========== HISTORIAL DE CAJAS ========== -->
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-white fw-bold">Historial de cajas</div>
+    <div class="card-body p-0">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-muted">
+          <tr>
+            <th class="ps-4">Apertura</th>
+            <th>Cierre</th>
+            <th class="text-end">Inicial</th>
+            <th class="text-end">Contado</th>
+            <th class="text-end">Diferencia</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="historial.length === 0">
+            <td colspan="7" class="text-center py-4 text-muted">Aún no hay cajas registradas.</td>
+          </tr>
+          <tr *ngFor="let h of historial">
+            <td class="ps-4">{{ h.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ h.fechaCierre ? (h.fechaCierre | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
+            <td class="text-end">S/ {{ h.montoInicial | number:'1.2-2' }}</td>
+            <td class="text-end">{{ h.montoFinal !== null ? ('S/ ' + (h.montoFinal | number:'1.2-2')) : '-' }}</td>
+            <td class="text-end"
+                [ngClass]="(h.diferencia ?? 0) === 0 ? '' : (h.diferencia ?? 0) > 0 ? 'text-warning' : 'text-danger'">
+              {{ h.diferencia !== null ? ('S/ ' + (h.diferencia | number:'1.2-2')) : '-' }}
+            </td>
+            <td class="text-center">
+              <span class="badge rounded-pill" [ngClass]="h.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ h.estado }}</span>
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-info" (click)="verCaja(h)"><i class="bi bi-eye"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PLANTILLA REUTILIZABLE: tabla de ventas con detalle ========== -->
+<ng-template #tablaVentas let-caja>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">Ventas de esta caja</div>
+    <div class="card-body p-0">
+      <table class="table align-middle mb-0">
+        <thead class="table-light text-muted">
+          <tr>
+            <th class="ps-4">N° Venta</th>
+            <th>Hora</th>
+            <th>Cliente</th>
+            <th>Comprobante</th>
+            <th class="text-center">Pago</th>
+            <th class="text-end">Total</th>
+            <th class="text-center">Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="caja.ventas.length === 0">
+            <td colspan="8" class="text-center py-4 text-muted">Todavía no hay ventas en esta caja.</td>
+          </tr>
+
+          <ng-container *ngFor="let venta of caja.ventas">
+            <tr [class.text-decoration-line-through]="venta.estado === 'ANULADA'">
+              <td class="ps-4 fw-bold">{{ venta.numeroVenta }}</td>
+              <td>{{ venta.fechaVenta | date:'dd/MM HH:mm' }}</td>
+              <td>{{ venta.cliente }}</td>
+              <td>{{ venta.tipoComprobante }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="claseMetodo(venta.metodoPago)">{{ venta.metodoPago }}</span>
+              </td>
+              <td class="text-end fw-bold">S/ {{ venta.total | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="badge rounded-pill" [ngClass]="venta.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{ venta.estado }}</span>
+              </td>
+              <td class="text-center">
+                <button class="btn btn-sm btn-outline-secondary" (click)="toggleVenta(venta.numeroVenta)">
+                  <i class="bi" [ngClass]="ventaExpandida === venta.numeroVenta ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Detalle de la venta -->
+            <tr *ngIf="ventaExpandida === venta.numeroVenta" class="table-light">
+              <td colspan="8" class="px-5 py-3">
+                <div class="small text-muted mb-2">Vendedor: {{ venta.vendedor }}</div>
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th>Producto</th><th>Lote</th>
+                      <th class="text-center">Cant.</th>
+                      <th class="text-end">P. Unit.</th>
+                      <th class="text-end">Subtotal</th>
+                      <th class="text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let d of venta.detalles">
+                      <td>{{ d.producto }}</td>
+                      <td>{{ d.numeroLote }}</td>
+                      <td class="text-center">{{ d.cantidad }}</td>
+                      <td class="text-end">S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+                      <td class="text-end">S/ {{ d.subtotal | number:'1.2-2' }}</td>
+                      <td class="text-center">
+                        <span class="badge" [ngClass]="d.estado === 'V' ? 'bg-success' : 'bg-warning text-dark'">
+                          {{ d.estado === 'V' ? 'Vendido' : 'Devuelto' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>
