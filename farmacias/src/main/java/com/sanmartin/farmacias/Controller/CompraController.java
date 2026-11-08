@@ -4,6 +4,7 @@ package com.sanmartin.farmacias.Controller;
 import com.sanmartin.farmacias.Dto.CompraRequestDTO;
 import com.sanmartin.farmacias.Dto.CompraResponseDTO;
 import com.sanmartin.farmacias.Entity.EstadoCompra;
+import com.sanmartin.farmacias.Entity.Proveedor;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.ICompraService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,12 +59,6 @@ public class CompraController {
     @Operation(summary = "Busca por nombre. Para la búsqueda de proveedores por nombre")
     public ResponseEntity<List<CompraResponseDTO>> buscarPorNombreProveedor(@PathVariable String nombreProveedor){
         return ResponseEntity.ok(compraService.listarPorNombreProveedor(nombreProveedor));
-    }
-
-    @GetMapping("/producto/nombre/{nombreProducto}")
-    @Operation(summary = "Buscar compra por el nombre del producto")
-    public ResponseEntity<List<CompraResponseDTO>> buscarPorNombreProducto(@PathVariable String nombreProducto){
-        return ResponseEntity.ok(compraService.listarPornombreProducto(nombreProducto));
     }
 
     @PostMapping
