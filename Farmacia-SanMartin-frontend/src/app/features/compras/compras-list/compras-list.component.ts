@@ -34,13 +34,15 @@ export class ComprasListComponent implements OnInit {
 
   nuevoEstadoSeleccionado: EstadoCompra | null = null;
   compraSeleccionada: Compra | null = null;
+  numeroCompraSeleccionada: number | null = null;
   id : number | null = null;
   formCompra: FormGroup;
   formProveedor: FormGroup;
 
   terminoBusqueda: string = '';
-  tipoBusqueda: 'proveedor' | 'id' = 'proveedor';
-  
+  tipoBusqueda: 'proveedor' | 'producto' = 'proveedor';
+    productoTextoBusqueda:  string = '';
+
   constructor() {
   this.formCompra = this.fb.group({
   productos: ['', [Validators.required, Validators.minLength(1)]],
@@ -87,8 +89,9 @@ export class ComprasListComponent implements OnInit {
     });
   }
 
-  verDetalles(compra: Compra) {
+  verDetalles(compra: Compra, index: number) {
     this.compraSeleccionada = compra;
+    this.numeroCompraSeleccionada = index + 1;
   }
 
   verEstado(Compra: Compra) {
@@ -103,10 +106,10 @@ export class ComprasListComponent implements OnInit {
       this.comprasFiltradas = this.compras; // Si no hay término, mostrar todas las compras
       return;
     }
-    if (this.tipoBusqueda === 'id') {
-      console.log('Buscando por ID:', termino);
+    if (this.tipoBusqueda === 'producto') {
+      console.log('Buscando por nombre de producto:', termino);
       this.comprasFiltradas= this.compras.filter(c => 
-        c.idCompra?.toString() === termino);
+        c.detalles?.some(d => d.nombreProducto?.toLowerCase().includes(termino)));
     }else{
       console.log('Buscando por proveedor:', termino);
       this.comprasFiltradas = this.compras.filter(c => 
@@ -146,6 +149,7 @@ export class ComprasListComponent implements OnInit {
         document.getElementById('closeModalButton')?.click();
         this.cargarCompras();
         this.formCompra.reset();
+        this.productoTextoBusqueda = '';
       },
       error: (err) => {
         (document.activeElement as HTMLElement)?.blur();
@@ -238,5 +242,20 @@ export class ComprasListComponent implements OnInit {
   this.terminoBusqueda = '';
   this.comprasFiltradas = [...this.compras];
   }
+
+  onSeleccionarProducto(event: Event): void {
+  const valor = (event.target as HTMLInputElement).value;
+  const productoEncontrado = this.productos.find(
+    p => p.nombreProducto.toLowerCase().trim() === valor.toLowerCase().trim()
+  );
+
+  if (productoEncontrado && productoEncontrado.idProducto) {
+    // Sincroniza el ID numérico con el FormGroup
+    this.formCompra.patchValue({ productos: productoEncontrado.idProducto });
+  } else {
+    // Si borra el texto o escribe algo que no existe, invalida el campo
+    this.formCompra.patchValue({ productos: '' });
+  }
+}
 
 }
