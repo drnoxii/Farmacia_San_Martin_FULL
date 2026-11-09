@@ -8,7 +8,7 @@ import { ComprasListComponent } from './features/compras/compras-list/compras-li
 import { VentasPosComponent } from './features/ventas-pos/ventas-pos.component';
 import { UsuariosComponent } from './features/usuarios/usuarios.component';
 import { CajaComponent } from './features/caja/caja.component';
-
+import { ReportesComponent } from './features/reportes/reportes.component';
 export const routes: Routes = [
 
     {
@@ -34,6 +34,7 @@ export const routes: Routes = [
             {path: 'ventas', component: VentasPosComponent},
             {path: 'usuarios', component: UsuariosComponent},
             { path: 'caja', component: CajaComponent },
+            { path: 'reportes', component: ReportesComponent },
         ]
     },
     {

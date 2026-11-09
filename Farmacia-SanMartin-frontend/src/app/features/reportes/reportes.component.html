@@ -1,0 +1,315 @@
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="fw-bold text-dark m-0"><i class="bi bi-bar-chart-line me-2"></i>Reportes</h2>
+    <div class="btn-group">
+      <button class="btn btn-outline-success btn-sm" (click)="exportarExcel()" [disabled]="!hayDatos">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger btn-sm" (click)="exportarPdf()" [disabled]="!hayDatos">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Pestañas -->
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="tab === 'ventas'" (click)="cambiarTab('ventas')">Ventas</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="tab === 'inventario'" (click)="cambiarTab('inventario')">Inventario</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="tab === 'cierres'" (click)="cambiarTab('cierres')">Cierres de caja</button>
+    </li>
+  </ul>
+
+  <!-- Filtro de fechas (Ventas y Cierres) -->
+  <div class="card shadow-sm border-0 mb-3" *ngIf="tab !== 'inventario'">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg-auto">
+          <div class="btn-group">
+            <button class="btn btn-sm" [ngClass]="periodo === 'hoy' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('hoy')">Hoy</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'semana' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('semana')">Esta semana</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'mes' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('mes')">Este mes</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'rango' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('rango')">Rango</button>
+          </div>
+        </div>
+        <ng-container *ngIf="periodo === 'rango'">
+          <div class="col-6 col-lg-auto">
+            <label class="form-label small mb-0">Desde</label>
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="desde">
+          </div>
+          <div class="col-6 col-lg-auto">
+            <label class="form-label small mb-0">Hasta</label>
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="hasta">
+          </div>
+          <div class="col-12 col-lg-auto">
+            <button class="btn btn-sm btn-sanmartin" (click)="cargar()">Aplicar</button>
+          </div>
+        </ng-container>
+        <div class="col text-muted small text-lg-end">
+          Del {{ fechaCorta(desde) }} al {{ fechaCorta(hasta) }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtro de días (Inventario) -->
+  <div class="card shadow-sm border-0 mb-3" *ngIf="tab === 'inventario'">
+    <div class="card-body d-flex align-items-center gap-2">
+      <label class="small m-0">Mostrar lotes que vencen en los próximos</label>
+      <select class="form-select form-select-sm w-auto" [(ngModel)]="dias" (change)="cargar()">
+        <option [ngValue]="30">30 días</option>
+        <option [ngValue]="60">60 días</option>
+        <option [ngValue]="90">90 días</option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="cargando" class="text-center py-4 text-muted">Cargando reporte...</div>
+
+  <!-- ================= VENTAS ================= -->
+  <ng-container *ngIf="tab === 'ventas' && ventas as v">
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">Total vendido</div>
+          <div class="fs-4 fw-bold text-success">S/ {{ v.totalVendido | number:'1.2-2' }}</div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">N° de ventas</div>
+          <div class="fs-4 fw-bold">{{ v.cantidadVentas }}</div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">Ventas anuladas</div>
+          <div class="fs-4 fw-bold text-danger">{{ v.cantidadAnuladas }}
+            <small class="fs-6 text-muted">· S/ {{ v.totalAnulado | number:'1.2-2' }}</small></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4">
+        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por método de pago', items: v.porMetodoPago }"></ng-container>
+      </div>
+      <div class="col-lg-4">
+        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por comprobante', items: v.porComprobante }"></ng-container>
+      </div>
+      <div class="col-lg-4">
+        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por vendedor', items: v.porVendedor }"></ng-container>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white fw-bold">Ventas del periodo</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="ps-3">N° Venta</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th>
+              <th>Comprobante</th><th>Pago</th><th class="text-end">Total</th><th class="text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="v.ventas.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">No hay ventas en este periodo.</td>
+            </tr>
+            <tr *ngFor="let x of v.ventas" [class.text-decoration-line-through]="x.estado === 'ANULADA'">
+              <td class="ps-3 fw-bold">{{ x.numeroVenta }}</td>
+              <td>{{ fechaHora(x.fecha) }}</td>
+              <td>{{ x.cliente }}</td>
+              <td>{{ x.vendedor }}</td>
+              <td>{{ x.tipoComprobante }}</td>
+              <td>{{ x.metodoPago }}</td>
+              <td class="text-end">S/ {{ x.total | number:'1.2-2' }}</td>
+              <td class="text-center">
+                <span class="badge rounded-pill" [ngClass]="x.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{ x.estado }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================= INVENTARIO ================= -->
+  <ng-container *ngIf="tab === 'inventario' && inventario as i">
+
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-header bg-white fw-bold">
+        Stock bajo el mínimo <span class="badge bg-danger ms-2">{{ i.stockBajo.length }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="ps-3">Código</th><th>Producto</th><th>Categoría</th>
+              <th class="text-end">Stock actual</th><th class="text-end">Mínimo</th><th class="text-end">Faltan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="i.stockBajo.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted">Todos los productos están sobre su stock mínimo.</td>
+            </tr>
+            <tr *ngFor="let s of i.stockBajo">
+              <td class="ps-3">{{ s.codigo }}</td>
+              <td class="fw-bold">{{ s.producto }}</td>
+              <td>{{ s.categoria }}</td>
+              <td class="text-end text-danger fw-bold">{{ s.stockActual }}</td>
+              <td class="text-end">{{ s.stockMinimo }}</td>
+              <td class="text-end">{{ s.faltante }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-header bg-white fw-bold">
+        Lotes por vencer (próximos {{ i.dias }} días) <span class="badge bg-warning text-dark ms-2">{{ i.lotesPorVencer.length }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Vencimiento</th>
+              <th class="text-end">Stock</th><th class="text-center">Faltan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="i.lotesPorVencer.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted">No hay lotes por vencer en este plazo.</td>
+            </tr>
+            <tr *ngFor="let l of i.lotesPorVencer">
+              <td class="ps-3">{{ l.codigo }}</td>
+              <td class="fw-bold">{{ l.producto }}</td>
+              <td>{{ l.numeroLote }}</td>
+              <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
+              <td class="text-end">{{ l.stock }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="l.diasRestantes <= 7 ? 'bg-danger' : 'bg-warning text-dark'">{{ l.diasRestantes }} días</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white fw-bold">
+        Lotes vencidos con stock <span class="badge bg-dark ms-2">{{ i.lotesVencidos.length }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Venció</th>
+              <th class="text-end">Stock</th><th class="text-center">Hace</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="i.lotesVencidos.length === 0">
+              <td colspan="6" class="text-center py-4 text-muted">No hay lotes vencidos con stock.</td>
+            </tr>
+            <tr *ngFor="let l of i.lotesVencidos">
+              <td class="ps-3">{{ l.codigo }}</td>
+              <td class="fw-bold">{{ l.producto }}</td>
+              <td>{{ l.numeroLote }}</td>
+              <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
+              <td class="text-end">{{ l.stock }}</td>
+              <td class="text-center"><span class="badge bg-dark">{{ diasVencido(l.diasRestantes) }} días</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================= CIERRES DE CAJA ================= -->
+  <ng-container *ngIf="tab === 'cierres' && cierres as c">
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">Cajas cerradas</div>
+          <div class="fs-4 fw-bold">{{ c.cantidad }}</div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">Total sobrantes</div>
+          <div class="fs-4 fw-bold text-warning">S/ {{ c.totalSobrantes | number:'1.2-2' }}</div>
+        </div></div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100"><div class="card-body">
+          <div class="text-muted small">Total faltantes</div>
+          <div class="fs-4 fw-bold text-danger">S/ {{ c.totalFaltantes | number:'1.2-2' }}</div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-white fw-bold">Cierres del periodo</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light text-muted">
+            <tr>
+              <th class="ps-3">Cajero</th><th>Apertura</th><th>Cierre</th>
+              <th class="text-end">Inicial</th><th class="text-end">Ventas efectivo</th>
+              <th class="text-end">Esperado</th><th class="text-end">Contado</th><th class="text-end">Diferencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="c.cierres.length === 0">
+              <td colspan="8" class="text-center py-4 text-muted">No hay cierres de caja en este periodo.</td>
+            </tr>
+            <tr *ngFor="let x of c.cierres">
+              <td class="ps-3 fw-bold">{{ x.cajero }}</td>
+              <td>{{ fechaHora(x.apertura) }}</td>
+              <td>{{ fechaHora(x.cierre) }}</td>
+              <td class="text-end">S/ {{ x.montoInicial | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ x.ventasEfectivo | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ x.esperado | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ x.contado | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold"
+                  [ngClass]="x.diferencia === 0 ? 'text-success' : x.diferencia > 0 ? 'text-warning' : 'text-danger'">
+                S/ {{ x.diferencia | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>
+
+<!-- Plantilla reutilizable: tabla pequeña de resumen -->
+<ng-template #resumen let-titulo="titulo" let-items="items">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-white fw-bold">{{ titulo }}</div>
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light text-muted">
+        <tr><th class="ps-3"></th><th class="text-center">Ventas</th><th class="text-end pe-3">Total</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="items.length === 0">
+          <td colspan="3" class="text-center py-3 text-muted">Sin datos</td>
+        </tr>
+        <tr *ngFor="let it of items">
+          <td class="ps-3">{{ it.etiqueta }}</td>
+          <td class="text-center">{{ it.cantidad }}</td>
+          <td class="text-end pe-3">S/ {{ it.total | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</ng-template>
