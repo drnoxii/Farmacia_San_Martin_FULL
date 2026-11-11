@@ -127,6 +127,11 @@ public class CompraServiceImpl implements ICompraService{
         return compraRepository.findByProveedor_razonSocial(nombreProveedor).stream().map(this::toDto).toList();
     }
 
+    @Override
+    public List<CompraResponseDTO> listarPornombreProducto(String nombreProducto) {
+        return compraRepository.findDistinctBydetalles_producto_nombreProductoContainingIgnoreCase(nombreProducto).stream().map(this::toDto).toList();
+    }
+
     private CompraResponseDTO toDto(Compra c) {
 
         List<DetalleCompraResponseDTO> detalles = detalleCompraRepository
