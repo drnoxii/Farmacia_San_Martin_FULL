@@ -1,5 +1,6 @@
 package com.sanmartin.farmacias.Repository;
 
+import com.sanmartin.farmacias.Dto.CajaDTO;
 import com.sanmartin.farmacias.Entity.Caja;
 import com.sanmartin.farmacias.Entity.EstadoCaja;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,6 @@ public interface CajaRepository extends JpaRepository<Caja,Long> {
 
     // Listar por usuario
     List<Caja> findByUsuarioIdUsuario(Long idUsuario);
+
+
 }

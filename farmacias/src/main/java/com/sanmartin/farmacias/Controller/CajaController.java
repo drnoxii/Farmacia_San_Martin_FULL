@@ -80,4 +80,12 @@ public class CajaController {
                                           @RequestBody @Valid CajaCierreDTO dto) {
         return ResponseEntity.ok(cajaService.cerrar(id, dto));
     }
+
+    @GetMapping("/usuario/{idUsuario}/abierta")
+    @Operation(summary = "Obtener la caja abierta de un usuario")
+    public ResponseEntity<CajaDTO> obtenerCajaAbierta(@PathVariable Long idUsuario) {
+        return cajaService.buscarCajaAbiertaPorUsuario(idUsuario)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no tiene ninguna caja abierta"));
+    }
 }
