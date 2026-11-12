@@ -38,3 +38,9 @@ export interface ReporteCierres {
   desde: string; hasta: string; cantidad: number;
   totalSobrantes: number; totalFaltantes: number; cierres: CierreFila[];
 }
+
+export interface ResumenVentasSP {
+  cantidadRegistros: number;
+  totalRegistrado: number;
+  origen: string;
+}

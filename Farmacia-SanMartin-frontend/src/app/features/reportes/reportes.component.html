@@ -73,6 +73,72 @@
 
   <!-- ================= VENTAS ================= -->
   <ng-container *ngIf="tab === 'ventas' && ventas as v">
+   
+<!-- RESUMEN DEL PROCEDIMIENTO ALMACENADO ORACLE -->
+<div class="card shadow-sm border-0 mb-3">
+
+  <div class="card-header bg-white fw-bold">
+    <i class="bi bi-database me-2 text-success"></i>
+    Resumen desde procedimiento almacenado Oracle
+  </div>
+
+  <div class="card-body">
+
+    <!-- Mensaje de carga -->
+    <div *ngIf="cargandoResumenSP" class="text-muted">
+      Consultando procedimiento almacenado...
+    </div>
+
+    <!-- Mensaje de error -->
+    <div *ngIf="errorResumenSP" class="alert alert-warning">
+      {{ errorResumenSP }}
+    </div>
+
+    <!-- Resultados del procedimiento -->
+    <div *ngIf="resumenSP as sp" class="row g-3">
+
+      <div class="col-md-6">
+        <div class="bg-light rounded p-3 h-100">
+
+          <div class="text-muted small">
+            Cantidad de ventas registradas
+          </div>
+
+          <div class="fs-4 fw-bold">
+            {{ sp.cantidadRegistros }}
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="bg-light rounded p-3 h-100">
+
+          <div class="text-muted small">
+            Total registrado
+          </div>
+
+          <div class="fs-4 fw-bold text-success">
+            S/ {{ sp.totalRegistrado | number:'1.2-2' }}
+          </div>
+
+        </div>
+      </div>
+
+      <div class="col-12">
+        <small class="text-muted">
+          Fuente: SAN_MARTIN.SP_RESUMEN_VENTAS.
+          Procedimiento ejecutado desde Java mediante
+          CallableStatement. Incluye ventas de todos los estados.
+        </small>
+      </div>
+
+    </div>
+
+  </div>
+
+ </div> 
+ <!-- FIN DEL RESUMEN ORACLE -->
 
     <div class="row g-3 mb-3">
       <div class="col-md-4">

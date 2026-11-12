@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ExportService, Hoja } from '../../core/services/export.service';
 import { AlertService } from '../../core/services/alert.service';
-import { ReporteCierres, ReporteInventario, ReporteVentas } from '../../core/interfaces/reporte.interface';
+import { ReporteCierres, ReporteInventario, ReporteVentas, ResumenVentasSP } from '../../core/interfaces/reporte.interface';
+
 
 type Tab = 'ventas' | 'inventario' | 'cierres';
 type Periodo = 'hoy' | 'semana' | 'mes' | 'rango';
@@ -32,6 +33,10 @@ export class ReportesComponent implements OnInit {
   ventas: ReporteVentas | null = null;
   inventario: ReporteInventario | null = null;
   cierres: ReporteCierres | null = null;
+  resumenSP: ResumenVentasSP | null = null;
+  cargandoResumenSP = false;
+  errorResumenSP = '';
+
 
   ngOnInit(): void {
     this.setPeriodo('hoy');
@@ -79,10 +84,38 @@ export class ReportesComponent implements OnInit {
       this.alert.error(err.error?.message || 'No se pudo cargar el reporte');
     };
 
-    if (this.tab === 'ventas') {
-      this.reporteService.ventas(this.desde, this.hasta)
-        .subscribe({ next: r => { this.ventas = r; fin(); }, error: fallo });
-    } else if (this.tab === 'inventario') {
+    
+if (this.tab === 'ventas') {
+  const desde = this.desde;
+  const hasta = this.hasta;
+
+  this.resumenSP = null;
+  this.errorResumenSP = '';
+  this.cargandoResumenSP = true;
+
+  this.reporteService.ventas(desde, hasta).subscribe({
+    next: r => {
+      this.ventas = r;
+      fin();
+
+      this.reporteService.resumenVentasSP(desde, hasta).subscribe({
+        next: (resultado: ResumenVentasSP) => {
+          this.resumenSP = resultado;
+          this.cargandoResumenSP = false;
+        },
+        error: () => {
+          this.cargandoResumenSP = false;
+          this.errorResumenSP =
+            'No se pudo consultar el procedimiento almacenado.';
+        }
+      });
+    },
+    error: err => {
+      this.cargandoResumenSP = false;
+      fallo(err);
+    }
+  });
+}else if (this.tab === 'inventario') {
       this.reporteService.inventario(this.dias)
         .subscribe({ next: r => { this.inventario = r; fin(); }, error: fallo });
     } else {
