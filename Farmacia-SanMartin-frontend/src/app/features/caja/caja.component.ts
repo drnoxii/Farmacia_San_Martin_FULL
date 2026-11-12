@@ -33,20 +33,27 @@ export class CajaComponent implements OnInit {
     this.cargar();
   }
 
-  cargar(): void {
+ cargar(): void {
     this.cargando = true;
+    
+    // 1. Buscamos la caja abierta
     this.cajaService.cajaAbierta(this.idUsuario).subscribe({
       next: resumen => {
         this.cajaActual = resumen;
         this.cargando = false;
       },
       error: err => {
+        // Si el backend devuelve 404, significa que NO hay caja abierta.
+        // No mostramos alerta de error, simplemente la dejamos en null.
+        this.cajaActual = null; 
         this.cargando = false;
-        this.alert.error(err.error?.message || 'No se pudo cargar la caja');
       }
     });
+
+    // 2. Cargamos el historial
     this.cajaService.historial(this.idUsuario).subscribe({
-      next: lista => this.historial = [...lista].reverse()
+      next: lista => this.historial = [...lista].reverse(),
+      error: () => this.historial = []
     });
   }
 
@@ -98,6 +105,8 @@ export class CajaComponent implements OnInit {
     });
   }
 
+  
+
   // ---------- Consultas ----------
   verCaja(c: Caja): void {
     this.cajaService.resumen(c.idCaja).subscribe({
@@ -113,4 +122,6 @@ export class CajaComponent implements OnInit {
   claseMetodo(m: string): string {
     return { EFECTIVO: 'bg-success', YAPE: 'bg-purple', PLIN: 'bg-info text-dark', TARJETA: 'bg-primary' }[m] || 'bg-secondary';
   }
+
+  
 }

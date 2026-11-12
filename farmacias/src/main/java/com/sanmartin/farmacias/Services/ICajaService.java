@@ -22,4 +22,6 @@ public interface ICajaService {
     CajaDTO abrir(CajaAperturaDTO dto);
 
     CajaDTO cerrar(Long idCaja, CajaCierreDTO dto);
+
+    Optional<CajaDTO> buscarCajaAbiertaPorUsuario(Long idUsuario);
 }

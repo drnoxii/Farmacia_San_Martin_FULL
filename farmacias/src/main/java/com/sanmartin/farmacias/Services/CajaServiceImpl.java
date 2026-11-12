@@ -96,6 +96,14 @@ public class CajaServiceImpl implements ICajaService{
 
         return toDto(cajaRepository.save(caja));
     }
+
+    @Override
+    public Optional<CajaDTO> buscarCajaAbiertaPorUsuario(Long idUsuario) {
+        return cajaRepository.findByUsuarioIdUsuarioAndEstado(idUsuario, EstadoCaja.ABIERTA)
+                .map(this::toDto);
+    }
+
+
     private CajaDTO toDto(Caja c) {
         return new CajaDTO(
                 c.getIdCaja(),

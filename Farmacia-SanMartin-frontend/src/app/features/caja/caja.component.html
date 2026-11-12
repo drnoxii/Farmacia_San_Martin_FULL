@@ -222,11 +222,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="caja.ventas.length === 0">
+          <tr *ngIf="caja?.ventas?.length === 0">
             <td colspan="8" class="text-center py-4 text-muted">Todavía no hay ventas en esta caja.</td>
           </tr>
 
-          <ng-container *ngFor="let venta of caja.ventas">
+          <ng-container *ngFor="let venta of caja?.ventas || []">
             <tr [class.text-decoration-line-through]="venta.estado === 'ANULADA'">
               <td class="ps-4 fw-bold">{{ venta.numeroVenta }}</td>
               <td>{{ venta.fechaVenta | date:'dd/MM HH:mm' }}</td>
