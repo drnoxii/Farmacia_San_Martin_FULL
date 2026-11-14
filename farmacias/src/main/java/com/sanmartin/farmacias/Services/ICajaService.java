@@ -3,6 +3,7 @@ package com.sanmartin.farmacias.Services;
 import com.sanmartin.farmacias.Dto.CajaAperturaDTO;
 import com.sanmartin.farmacias.Dto.CajaCierreDTO;
 import com.sanmartin.farmacias.Dto.CajaDTO;
+import com.sanmartin.farmacias.Dto.CajaResumenDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,4 +25,7 @@ public interface ICajaService {
     CajaDTO cerrar(Long idCaja, CajaCierreDTO dto);
 
     Optional<CajaDTO> buscarCajaAbiertaPorUsuario(Long idUsuario);
+
+    // Devuelve la caja con todos sus totales y ventas calculados.
+    CajaResumenDTO resumen(Long idCaja);
 }

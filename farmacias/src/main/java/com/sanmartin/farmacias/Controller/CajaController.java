@@ -3,6 +3,7 @@ package com.sanmartin.farmacias.Controller;
 import com.sanmartin.farmacias.Dto.CajaAperturaDTO;
 import com.sanmartin.farmacias.Dto.CajaCierreDTO;
 import com.sanmartin.farmacias.Dto.CajaDTO;
+import com.sanmartin.farmacias.Dto.CajaResumenDTO;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.ICajaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -87,5 +88,16 @@ public class CajaController {
         return cajaService.buscarCajaAbiertaPorUsuario(idUsuario)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new ResourceNotFoundException("El usuario no tiene ninguna caja abierta"));
+    }
+
+    /**
+     * QUÉ HACE: devuelve el resumen (totales + ventas) de una caja.
+     * POR QUÉ:  es el endpoint que usa la pantalla de caja para mostrar
+     *           cuánto dinero ha ingresado.
+     */
+    @GetMapping("/{id}/resumen")
+    @Operation(summary = "Resumen de caja con totales y ventas")
+    public ResponseEntity<CajaResumenDTO> resumen(@PathVariable Long id) {
+        return ResponseEntity.ok(cajaService.resumen(id));
     }
 }
