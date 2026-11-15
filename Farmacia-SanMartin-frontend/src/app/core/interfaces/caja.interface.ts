@@ -8,6 +8,14 @@ export interface Caja {
   estado: 'ABIERTA' | 'CERRADA';
   fechaApertura: string;
   fechaCierre: string | null;
+
+  // Nuevos campos del arqueo
+  montoDigitalVerificado: number | null;
+  efectivoEsperadoCierre: number | null;
+  digitalEsperadoCierre: number | null;
+  diferenciaDigital: number | null;
+  diferenciaTotal: number | null;
+  observacionCierre: string | null;
 }
 
 export interface CajaVentaDetalle {
@@ -37,6 +45,12 @@ export interface CajaResumen {
   estado: 'ABIERTA' | 'CERRADA';
   fechaApertura: string;
   fechaCierre: string | null;
+  montoDigitalVerificado: number | null;
+  efectivoEsperadoCierre: number | null;
+  digitalEsperadoCierre: number | null;
+  diferenciaDigital: number | null;
+  diferenciaTotal: number | null;
+  observacionCierre: string | null;
   montoInicial: number;
   ventasEfectivo: number;
   ventasYape: number;
@@ -48,4 +62,11 @@ export interface CajaResumen {
   montoFinal: number | null;
   diferencia: number | null;
   ventas: CajaVenta[];
+}
+
+export interface CajaCierreRequest {
+  idUsuario: number;
+  montoContado: number;
+  montoDigitalVerificado: number;
+  observacionCierre: string | null;
 }

@@ -17,6 +17,14 @@ public record CajaDTO(
         BigDecimal diferencia,
         EstadoCaja estado,
         LocalDateTime fechaApertura,
-        LocalDateTime fechaCierre
+        LocalDateTime fechaCierre,
+
+        // Nuevos campos del arqueo
+        BigDecimal montoDigitalVerificado,
+        BigDecimal efectivoEsperadoCierre,
+        BigDecimal digitalEsperadoCierre,
+        BigDecimal diferenciaDigital,
+        BigDecimal diferenciaTotal,
+        String observacionCierre
 ) {
 }

@@ -14,6 +14,7 @@ public record CajaResumenDTO(
         EstadoCaja estado,
         LocalDateTime fechaApertura,
         LocalDateTime fechaCierre,
+
         BigDecimal montoInicial,
         BigDecimal ventasEfectivo,
         BigDecimal ventasYape,
@@ -21,8 +22,18 @@ public record CajaResumenDTO(
         BigDecimal ventasTarjeta,
         BigDecimal totalVendido,
         long cantidadVentas,
+
         BigDecimal montoEsperadoEfectivo,
         BigDecimal montoFinal,
         BigDecimal diferencia,
-        List<CajaVentaDTO> ventas
+
+        List<CajaVentaDTO> ventas,
+
+        // Nuevos campos del arqueo
+        BigDecimal montoDigitalVerificado,
+        BigDecimal efectivoEsperadoCierre,
+        BigDecimal digitalEsperadoCierre,
+        BigDecimal diferenciaDigital,
+        BigDecimal diferenciaTotal,
+        String observacionCierre
 ) {}

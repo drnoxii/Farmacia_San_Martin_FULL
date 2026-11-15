@@ -17,8 +17,10 @@ import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.CajaRepository;
 import com.sanmartin.farmacias.Repository.UsuarioRepository;
 import com.sanmartin.farmacias.Repository.VentaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -146,34 +148,97 @@ public class CajaServiceImpl implements ICajaService {
     @Transactional
     public CajaDTO cerrar(Long idCaja, CajaCierreDTO dto) {
 
-        // 1. La caja debe existir.
         Caja caja = cajaRepository.findById(idCaja)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Caja no encontrada con ID: " + idCaja));
 
-        // 2. No se puede cerrar dos veces la misma caja.
+        // 2. Validar estado
         if (caja.getEstado() == EstadoCaja.CERRADA) {
-            throw new RuntimeException("La caja ya está cerrada");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La caja ya está cerrada"
+            );
         }
 
-        // 3. Seguridad: solo el dueño de la caja puede cerrarla.
+        // 3. Validar propietario
         if (!caja.getUsuario().getIdUsuario().equals(dto.idUsuario())) {
-            throw new RuntimeException("No puedes cerrar una caja que no es tuya");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No puedes cerrar una caja que no es tuya"
+            );
         }
 
-        // 4. Efectivo que DEBERÍA haber en el cajón:
-        //    monto inicial + ventas pagadas en efectivo.
-        //    Yape/Plin/Tarjeta no cuentan porque ese dinero no está en el cajón.
-        BigDecimal ventasEfectivo = sumarPorMetodo(
-                ventaRepository.findByCajaIdCaja(idCaja), MetodoPago.EFECTIVO);
-        BigDecimal esperado = caja.getMontoInicial().add(ventasEfectivo);
+        // 4. Obtener ventas de esta caja
+        List<Venta> ventas = ventaRepository.findByCajaIdCaja(idCaja);
 
-        // 5. Diferencia: positivo = sobrante, negativo = faltante, cero = cuadró.
-        BigDecimal diferencia = dto.montoContado().subtract(esperado);
+        // 5. Calcular ventas por método de pago
+        BigDecimal efectivo = sumarPorMetodo(ventas, MetodoPago.EFECTIVO);
+        BigDecimal yape = sumarPorMetodo(ventas, MetodoPago.YAPE);
+        BigDecimal plin = sumarPorMetodo(ventas, MetodoPago.PLIN);
+        BigDecimal tarjeta = sumarPorMetodo(ventas, MetodoPago.TARJETA);
 
-        // 6. Guardar el cierre.
-        caja.setMontoFinal(dto.montoContado());
-        caja.setDiferencia(diferencia);
+        // 6. Montos esperados
+        BigDecimal efectivoEsperado = caja.getMontoInicial()
+                .add(efectivo);
+
+        BigDecimal digitalEsperado = yape
+                .add(plin)
+                .add(tarjeta);
+
+        // 7. Montos verificados por el cajero
+        BigDecimal efectivoContado = dto.montoContado();
+        BigDecimal digitalVerificado = dto.montoDigitalVerificado();
+
+        // 8. Calcular diferencias
+        BigDecimal diferenciaEfectivo = efectivoContado
+                .subtract(efectivoEsperado);
+
+        BigDecimal diferenciaDigital = digitalVerificado
+                .subtract(digitalEsperado);
+
+        BigDecimal diferenciaTotal = diferenciaEfectivo
+                .add(diferenciaDigital);
+
+        // 9. Detectar descuadres por separado
+        boolean hayDescuadre =
+                diferenciaEfectivo.compareTo(BigDecimal.ZERO) != 0
+                        || diferenciaDigital.compareTo(BigDecimal.ZERO) != 0;
+
+        // 10. Exigir observación si existe descuadre
+        String observacion = dto.observacionCierre() == null
+                ? null
+                : dto.observacionCierre().trim();
+
+        if (hayDescuadre &&
+                (observacion == null || observacion.isBlank())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Debes ingresar una observación cuando exista un descuadre"
+            );
+        }
+
+        if (observacion != null && observacion.length() > 500) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "La observación no puede superar los 500 caracteres"
+            );
+        }
+
+        // 11. Guardar los resultados del arqueo
+        caja.setMontoFinal(efectivoContado);
+        caja.setMontoDigitalVerificado(digitalVerificado);
+
+        caja.setEfectivoEsperadoCierre(efectivoEsperado);
+        caja.setDigitalEsperadoCierre(digitalEsperado);
+
+        caja.setDiferencia(diferenciaEfectivo);
+        caja.setDiferenciaDigital(diferenciaDigital);
+        caja.setDiferenciaTotal(diferenciaTotal);
+
+        caja.setObservacionCierre(observacion);
+
+        // 12. Finalizar caja
         caja.setFechaCierre(LocalDateTime.now());
         caja.setEstado(EstadoCaja.CERRADA);
 
@@ -234,14 +299,28 @@ public class CajaServiceImpl implements ICajaService {
                 caja.getEstado(),
                 caja.getFechaApertura(),
                 caja.getFechaCierre(),
+
                 caja.getMontoInicial(),
-                efectivo, yape, plin, tarjeta,
+                efectivo,
+                yape,
+                plin,
+                tarjeta,
                 totalVendido,
                 cantidad,
+
                 esperado,
                 caja.getMontoFinal(),
                 caja.getDiferencia(),
-                ventasDto
+
+                ventasDto,
+
+                // Datos nuevos del arqueo
+                caja.getMontoDigitalVerificado(),
+                caja.getEfectivoEsperadoCierre(),
+                caja.getDigitalEsperadoCierre(),
+                caja.getDiferenciaDigital(),
+                caja.getDiferenciaTotal(),
+                caja.getObservacionCierre()
         );
     }
 
@@ -327,7 +406,15 @@ public class CajaServiceImpl implements ICajaService {
                 c.getDiferencia(),
                 c.getEstado(),
                 c.getFechaApertura(),
-                c.getFechaCierre()
+                c.getFechaCierre(),
+
+                // Datos nuevos
+                c.getMontoDigitalVerificado(),
+                c.getEfectivoEsperadoCierre(),
+                c.getDigitalEsperadoCierre(),
+                c.getDiferenciaDigital(),
+                c.getDiferenciaTotal(),
+                c.getObservacionCierre()
         );
     }
 }

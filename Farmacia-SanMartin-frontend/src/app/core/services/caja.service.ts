@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { Caja, CajaResumen } from '../interfaces/caja.interface';
+import { Caja, CajaResumen, CajaCierreRequest} from '../interfaces/caja.interface';
 
 @Injectable({ providedIn: 'root' })
 export class CajaService {
@@ -60,4 +60,15 @@ export class CajaService {
   cerrar(idCaja: number, idUsuario: number, montoContado: number): Observable<Caja> {
     return this.http.post<Caja>(`${this.apiUrl}/${idCaja}/cerrar`, { idUsuario, montoContado });
   }
+
+  cerrarConArqueo(
+  idCaja: number,
+  datos: CajaCierreRequest
+): Observable<Caja> {
+
+  return this.http.post<Caja>(
+    `${this.apiUrl}/${idCaja}/cerrar`,
+    datos
+  );
+}
 }

@@ -26,7 +26,27 @@ public class Caja {
         @Column(precision = 10, scale = 2)
         private BigDecimal diferencia;
 
-        @Enumerated(EnumType.STRING)
+
+    @Column(name = "monto_digital_verificado", precision = 10, scale = 2)
+    private BigDecimal montoDigitalVerificado;
+
+    @Column(name = "efectivo_esperado_cierre", precision = 10, scale = 2)
+    private BigDecimal efectivoEsperadoCierre;
+
+    @Column(name = "digital_esperado_cierre", precision = 10, scale = 2)
+    private BigDecimal digitalEsperadoCierre;
+
+    @Column(name = "diferencia_digital", precision = 10, scale = 2)
+    private BigDecimal diferenciaDigital;
+
+    @Column(name = "diferencia_total", precision = 10, scale = 2)
+    private BigDecimal diferenciaTotal;
+
+    @Column(name = "observacion_cierre", length = 500)
+    private String observacionCierre;
+
+
+    @Enumerated(EnumType.STRING)
         @Column(nullable = false, length = 15)
         private EstadoCaja estado = EstadoCaja.ABIERTA;
 
@@ -39,12 +59,18 @@ public class Caja {
     public Caja() {
     }
 
-    public Caja(Long idCaja, Usuario usuario, BigDecimal montoInicial, BigDecimal montoFinal, BigDecimal diferencia, EstadoCaja estado, LocalDateTime fechaApertura, LocalDateTime fechaCierre) {
+    public Caja(Long idCaja, Usuario usuario, BigDecimal montoInicial, BigDecimal montoFinal, BigDecimal diferencia, BigDecimal montoDigitalVerificado, BigDecimal efectivoEsperadoCierre, BigDecimal digitalEsperadoCierre, BigDecimal diferenciaDigital, BigDecimal diferenciaTotal, String observacionCierre, EstadoCaja estado, LocalDateTime fechaApertura, LocalDateTime fechaCierre) {
         this.idCaja = idCaja;
         this.usuario = usuario;
         this.montoInicial = montoInicial;
         this.montoFinal = montoFinal;
         this.diferencia = diferencia;
+        this.montoDigitalVerificado = montoDigitalVerificado;
+        this.efectivoEsperadoCierre = efectivoEsperadoCierre;
+        this.digitalEsperadoCierre = digitalEsperadoCierre;
+        this.diferenciaDigital = diferenciaDigital;
+        this.diferenciaTotal = diferenciaTotal;
+        this.observacionCierre = observacionCierre;
         this.estado = estado;
         this.fechaApertura = fechaApertura;
         this.fechaCierre = fechaCierre;
@@ -88,6 +114,54 @@ public class Caja {
 
     public void setDiferencia(BigDecimal diferencia) {
         this.diferencia = diferencia;
+    }
+
+    public BigDecimal getMontoDigitalVerificado() {
+        return montoDigitalVerificado;
+    }
+
+    public void setMontoDigitalVerificado(BigDecimal montoDigitalVerificado) {
+        this.montoDigitalVerificado = montoDigitalVerificado;
+    }
+
+    public BigDecimal getEfectivoEsperadoCierre() {
+        return efectivoEsperadoCierre;
+    }
+
+    public void setEfectivoEsperadoCierre(BigDecimal efectivoEsperadoCierre) {
+        this.efectivoEsperadoCierre = efectivoEsperadoCierre;
+    }
+
+    public BigDecimal getDigitalEsperadoCierre() {
+        return digitalEsperadoCierre;
+    }
+
+    public void setDigitalEsperadoCierre(BigDecimal digitalEsperadoCierre) {
+        this.digitalEsperadoCierre = digitalEsperadoCierre;
+    }
+
+    public BigDecimal getDiferenciaDigital() {
+        return diferenciaDigital;
+    }
+
+    public void setDiferenciaDigital(BigDecimal diferenciaDigital) {
+        this.diferenciaDigital = diferenciaDigital;
+    }
+
+    public BigDecimal getDiferenciaTotal() {
+        return diferenciaTotal;
+    }
+
+    public void setDiferenciaTotal(BigDecimal diferenciaTotal) {
+        this.diferenciaTotal = diferenciaTotal;
+    }
+
+    public String getObservacionCierre() {
+        return observacionCierre;
+    }
+
+    public void setObservacionCierre(String observacionCierre) {
+        this.observacionCierre = observacionCierre;
     }
 
     public EstadoCaja getEstado() {

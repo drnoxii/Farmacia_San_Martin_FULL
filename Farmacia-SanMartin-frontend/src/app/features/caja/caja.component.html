@@ -17,8 +17,8 @@
       <div class="row g-3 align-items-end">
         <div class="col-md-4">
           <label class="form-label">Monto inicial (S/)</label>
-          <input type="number" min="0" step="0.10" class="form-control"
-                 [(ngModel)]="montoInicial" placeholder="Ej: 100.00">
+          <input type="number" min="0" step="0.10" class="form-control" [(ngModel)]="montoInicial"
+            placeholder="Ej: 100.00">
         </div>
         <div class="col-md-3">
           <button class="btn btn-sanmartin w-100" (click)="abrirCaja()">
@@ -107,31 +107,30 @@
     <ng-container *ngTemplateOutlet="tablaVentas; context: { $implicit: c }"></ng-container>
 
     <!-- Cierre de caja -->
+
+    <!-- Cierre de caja -->
     <div class="card shadow-sm border-0 mb-4">
-      <div class="card-header bg-white fw-bold">Cerrar caja</div>
+      <div class="card-header bg-white fw-bold">
+        Cierre de caja
+      </div>
+
       <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label">Efectivo contado (S/)</label>
-            <input type="number" min="0" step="0.10" class="form-control"
-                   [(ngModel)]="montoContado" placeholder="Cuenta el efectivo del cajón">
-          </div>
-          <div class="col-md-4" *ngIf="diferenciaPrevia !== null">
-            <label class="form-label">Diferencia</label>
-            <div class="fs-5 fw-bold"
-                 [ngClass]="diferenciaPrevia === 0 ? 'text-success' : diferenciaPrevia > 0 ? 'text-warning' : 'text-danger'">
-              {{ diferenciaPrevia === 0 ? 'Cuadra' : diferenciaPrevia > 0 ? 'Sobrante' : 'Faltante' }}
-              · S/ {{ diferenciaPrevia | number:'1.2-2' }}
-            </div>
-          </div>
-          <div class="col-md-4">
-            <button class="btn btn-danger w-100" (click)="cerrarCaja()">
-              <i class="bi bi-lock me-1"></i> Cerrar caja
-            </button>
-          </div>
-        </div>
+        <p class="text-muted mb-3">
+          Al finalizar tu turno, realiza el arqueo de efectivo
+          y verifica los pagos digitales.
+        </p>
+
+        <button type="button" class="btn btn-danger" [disabled]="consultandoCierre" (click)="abrirModalCierre()">
+
+          <i class="bi bi-lock me-2"></i>
+
+          {{ consultandoCierre
+          ? 'Consultando montos...'
+          : 'Realizar cierre de caja' }}
+        </button>
       </div>
     </div>
+
   </ng-container>
 
   <!-- ========== DETALLE DE CAJA DEL HISTORIAL ========== -->
@@ -139,25 +138,168 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h5 class="fw-bold m-0">
         Detalle de caja del {{ v.fechaApertura | date:'dd/MM/yyyy HH:mm' }}
-        <span class="badge ms-2" [ngClass]="v.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ v.estado }}</span>
+        <span class="badge ms-2" [ngClass]="v.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ v.estado
+          }}</span>
       </h5>
       <button class="btn btn-sm btn-outline-secondary" (click)="cajaVista = null">Cerrar detalle</button>
     </div>
     <div class="row g-3 mb-3">
-      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
-        <div class="text-muted small">Monto inicial</div>
-        <div class="fw-bold">S/ {{ v.montoInicial | number:'1.2-2' }}</div></div></div></div>
-      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
-        <div class="text-muted small">Efectivo esperado</div>
-        <div class="fw-bold">S/ {{ v.montoEsperadoEfectivo | number:'1.2-2' }}</div></div></div></div>
-      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
-        <div class="text-muted small">Efectivo contado</div>
-        <div class="fw-bold">{{ v.montoFinal !== null ? ('S/ ' + (v.montoFinal | number:'1.2-2')) : '-' }}</div></div></div></div>
-      <div class="col-md-3"><div class="card border-0 shadow-sm"><div class="card-body">
-        <div class="text-muted small">Diferencia</div>
-        <div class="fw-bold" [ngClass]="(v.diferencia ?? 0) === 0 ? 'text-success' : (v.diferencia ?? 0) > 0 ? 'text-warning' : 'text-danger'">
-          {{ v.diferencia !== null ? ('S/ ' + (v.diferencia | number:'1.2-2')) : '-' }}</div></div></div></div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Monto inicial</div>
+            <div class="fw-bold">S/ {{ v.montoInicial | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Efectivo esperado</div>
+            <div class="fw-bold">S/ {{ v.montoEsperadoEfectivo | number:'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Efectivo contado</div>
+            <div class="fw-bold">{{ v.montoFinal !== null ? ('S/ ' + (v.montoFinal | number:'1.2-2')) : '-' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">Diferencia efectivo</div>
+            <div class="fw-bold"
+              [ngClass]="(v.diferencia ?? 0) === 0 ? 'text-success' : (v.diferencia ?? 0) > 0 ? 'text-warning' : 'text-danger'">
+              {{ v.diferencia !== null ? ('S/ ' + (v.diferencia | number:'1.2-2')) : '-' }}</div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- ===== ARQUEO DIGITAL Y TOTAL DEL CIERRE ===== -->
+    <div *ngIf="v.estado === 'CERRADA'" class="card shadow-sm border-0 mb-4">
+
+      <div class="card-header bg-white fw-bold">
+        <i class="bi bi-calculator me-2"></i>
+        Resultado del arqueo de caja
+      </div>
+
+      <div class="card-body">
+
+        <!-- Montos digitales -->
+        <div class="row g-3 mb-4">
+
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 h-100">
+              <div class="text-muted small">Digital esperado</div>
+              <div class="fs-5 fw-bold text-primary">
+                {{ v.digitalEsperadoCierre === null
+                ? '-'
+                : ('S/ ' + (v.digitalEsperadoCierre | number:'1.2-2')) }}
+              </div>
+              <small class="text-muted">Yape + Plin + Tarjeta</small>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 h-100">
+              <div class="text-muted small">Digital verificado</div>
+              <div class="fs-5 fw-bold">
+                {{ v.montoDigitalVerificado === null
+                ? '-'
+                : ('S/ ' + (v.montoDigitalVerificado | number:'1.2-2')) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="border rounded-3 p-3 h-100">
+              <div class="text-muted small">Diferencia digital</div>
+              <div class="fs-5 fw-bold" [ngClass]="{
+                 'text-success': v.diferenciaDigital === 0,
+                 'text-danger': (v.diferenciaDigital ?? 0) < 0,
+                 'text-warning': (v.diferenciaDigital ?? 0) > 0
+               }">
+                {{ v.diferenciaDigital === null
+                ? '-'
+                : ('S/ ' + (v.diferenciaDigital | number:'1.2-2')) }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Totales del cierre -->
+        <div *ngIf="v.efectivoEsperadoCierre !== null
+             && v.digitalEsperadoCierre !== null
+             && v.montoFinal !== null
+             && v.montoDigitalVerificado !== null">
+
+          <div class="bg-light rounded-3 p-3 mb-3">
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total esperado</span>
+              <strong>
+                S/ {{
+                (v.efectivoEsperadoCierre + v.digitalEsperadoCierre)
+                | number:'1.2-2'
+                }}
+              </strong>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total verificado</span>
+              <strong>
+                S/ {{
+                (v.montoFinal + v.montoDigitalVerificado)
+                | number:'1.2-2'
+                }}
+              </strong>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>Diferencia total</strong>
+              <span class="fs-4 fw-bold" [ngClass]="{
+                  'text-success': v.diferencia === 0
+                    && v.diferenciaDigital === 0,
+                  'text-danger': (v.diferenciaTotal ?? 0) < 0,
+                  'text-warning': v.diferenciaTotal !== null
+                    && v.diferenciaTotal >= 0
+                    && (v.diferencia !== 0
+                        || v.diferenciaDigital !== 0)
+                }">
+                S/ {{ v.diferenciaTotal | number:'1.2-2' }}
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Cierres históricos sin arqueo digital -->
+        <div *ngIf="v.montoDigitalVerificado === null" class="alert alert-secondary">
+          Esta caja se cerró antes de implementar
+          el arqueo digital.
+        </div>
+
+        <!-- Observación -->
+        <div *ngIf="v.observacionCierre" class="alert alert-warning mb-0">
+          <strong>
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Observación del cajero
+          </strong>
+          <p class="mb-0 mt-2">{{ v.observacionCierre }}</p>
+        </div>
+
+      </div>
+    </div>
+
+
     <ng-container *ngTemplateOutlet="tablaVentas; context: { $implicit: v }"></ng-container>
   </ng-container>
 
@@ -172,7 +314,7 @@
             <th>Cierre</th>
             <th class="text-end">Inicial</th>
             <th class="text-end">Contado</th>
-            <th class="text-end">Diferencia</th>
+            <th class="text-end">Diferencia total</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Detalle</th>
           </tr>
@@ -181,17 +323,52 @@
           <tr *ngIf="historial.length === 0">
             <td colspan="7" class="text-center py-4 text-muted">Aún no hay cajas registradas.</td>
           </tr>
-          <tr *ngFor="let h of historial">
+          <tr *ngFor="let h of historialOrdenado">
             <td class="ps-4">{{ h.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</td>
             <td>{{ h.fechaCierre ? (h.fechaCierre | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
             <td class="text-end">S/ {{ h.montoInicial | number:'1.2-2' }}</td>
             <td class="text-end">{{ h.montoFinal !== null ? ('S/ ' + (h.montoFinal | number:'1.2-2')) : '-' }}</td>
-            <td class="text-end"
-                [ngClass]="(h.diferencia ?? 0) === 0 ? '' : (h.diferencia ?? 0) > 0 ? 'text-warning' : 'text-danger'">
-              {{ h.diferencia !== null ? ('S/ ' + (h.diferencia | number:'1.2-2')) : '-' }}
+
+            <td class="text-end" [ngClass]="{
+      'text-success':
+        h.diferenciaDigital !== null &&
+        h.diferencia === 0 &&
+        h.diferenciaDigital === 0,
+
+      'text-danger':
+        h.diferenciaTotal !== null &&
+        h.diferenciaTotal < 0,
+
+      'text-warning':
+        h.diferenciaTotal !== null &&
+        h.diferenciaTotal >= 0 &&
+        (h.diferencia !== 0 || h.diferenciaDigital !== 0)
+    }">
+
+              <div class="fw-bold">
+                {{
+                h.diferenciaTotal !== null
+                ? ('S/ ' + (h.diferenciaTotal | number:'1.2-2'))
+                : (h.diferencia !== null
+                ? ('S/ ' + (h.diferencia | number:'1.2-2'))
+                : '-')
+                }}
+              </div>
+
+              <small *ngIf="h.diferenciaTotal === null && h.diferencia !== null" class="text-muted">
+                Solo efectivo (cierre antiguo)
+              </small>
+
+              <small *ngIf="h.diferenciaTotal === 0 &&
+           (h.diferencia !== 0 || h.diferenciaDigital !== 0)" class="text-warning">
+                Descuadre por método
+              </small>
+
             </td>
+
             <td class="text-center">
-              <span class="badge rounded-pill" [ngClass]="h.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{ h.estado }}</span>
+              <span class="badge rounded-pill" [ngClass]="h.estado === 'ABIERTA' ? 'bg-success' : 'bg-secondary'">{{
+                h.estado }}</span>
             </td>
             <td class="text-center">
               <button class="btn btn-sm btn-outline-info" (click)="verCaja(h)"><i class="bi bi-eye"></i></button>
@@ -237,11 +414,13 @@
               </td>
               <td class="text-end fw-bold">S/ {{ venta.total | number:'1.2-2' }}</td>
               <td class="text-center">
-                <span class="badge rounded-pill" [ngClass]="venta.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{ venta.estado }}</span>
+                <span class="badge rounded-pill" [ngClass]="venta.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{
+                  venta.estado }}</span>
               </td>
               <td class="text-center">
                 <button class="btn btn-sm btn-outline-secondary" (click)="toggleVenta(venta.numeroVenta)">
-                  <i class="bi" [ngClass]="ventaExpandida === venta.numeroVenta ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                  <i class="bi"
+                    [ngClass]="ventaExpandida === venta.numeroVenta ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                 </button>
               </td>
             </tr>
@@ -253,7 +432,8 @@
                 <table class="table table-sm mb-0">
                   <thead>
                     <tr>
-                      <th>Producto</th><th>Lote</th>
+                      <th>Producto</th>
+                      <th>Lote</th>
                       <th class="text-center">Cant.</th>
                       <th class="text-end">P. Unit.</th>
                       <th class="text-end">Subtotal</th>
@@ -283,3 +463,196 @@
     </div>
   </div>
 </ng-template>
+
+
+
+<!-- MODAL DE ARQUEO DE CAJA -->
+<div *ngIf="modalCierreAbierto && cajaParaCierre as c" class="modal fade show d-block" tabindex="-1" role="dialog"
+  aria-modal="true" aria-labelledby="tituloCierre">
+
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header bg-sanmartin-primary text-white">
+        <h5 class="modal-title fw-bold" id="tituloCierre">
+          <i class="bi bi-calculator me-2"></i>
+          Arqueo y cierre de caja
+        </h5>
+
+        <button type="button" class="btn-close btn-close-white" [disabled]="cerrandoCaja" (click)="cerrarModalCierre()">
+        </button>
+      </div>
+
+      <div class="modal-body p-4">
+
+        <h6 class="fw-bold mb-3">Montos esperados</h6>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="card bg-light border-0">
+              <div class="card-body">
+                <small class="text-muted">Efectivo esperado</small>
+                <div class="fs-4 fw-bold text-success">
+                  S/ {{ c.montoEsperadoEfectivo | number:'1.2-2' }}
+                </div>
+                <small class="text-muted">Inicial + ventas efectivo</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card bg-light border-0">
+              <div class="card-body">
+                <small class="text-muted">Digital esperado</small>
+                <div class="fs-4 fw-bold text-primary">
+                  S/ {{ digitalEsperado | number:'1.2-2' }}
+                </div>
+                <small class="text-muted">Yape + Plin + tarjeta</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-secondary d-flex justify-content-between">
+          <strong>Total esperado</strong>
+          <strong>S/ {{ totalEsperado | number:'1.2-2' }}</strong>
+        </div>
+
+        <hr>
+
+        <h6 class="fw-bold mb-3">Montos verificados</h6>
+
+        <div class="row g-3 mb-3">
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              Efectivo contado (S/)
+            </label>
+
+            <input type="number" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00"
+              [disabled]="cerrandoCaja" [(ngModel)]="montoContado">
+
+            <small class="text-muted">
+              Cuenta el dinero físico del cajón.
+            </small>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              Digital verificado (S/)
+            </label>
+
+            <input type="number" min="0" step="0.01" class="form-control form-control-lg" placeholder="0.00"
+              [disabled]="cerrandoCaja" [(ngModel)]="montoDigitalVerificado">
+
+            <small class="text-muted">
+              Verifica Yape, Plin y tarjeta.
+            </small>
+          </div>
+        </div>
+
+        <div *ngIf="montosValidos">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <small class="text-muted">Diferencia efectivo</small>
+              <div class="fw-bold" [ngClass]="{
+                     'text-success': diferenciaEfectivo === 0,
+                     'text-danger': (diferenciaEfectivo ?? 0) < 0,
+                     'text-warning': (diferenciaEfectivo ?? 0) > 0
+                   }">
+                S/ {{ diferenciaEfectivo | number:'1.2-2' }}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <small class="text-muted">Diferencia digital</small>
+              <div class="fw-bold" [ngClass]="{
+                     'text-success': diferenciaDigital === 0,
+                     'text-danger': (diferenciaDigital ?? 0) < 0,
+                     'text-warning': (diferenciaDigital ?? 0) > 0
+                   }">
+                S/ {{ diferenciaDigital | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="border rounded-3 p-3 mb-3">
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total esperado</span>
+              <strong>S/ {{ totalEsperado | number:'1.2-2' }}</strong>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total verificado</span>
+              <strong>S/ {{ totalVerificado | number:'1.2-2' }}</strong>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>Diferencia total</strong>
+              <span class="fs-4 fw-bold" [ngClass]="{
+                      'text-success': estadoArqueo === 'cuadrado',
+                      'text-danger': estadoArqueo === 'faltante',
+                      'text-warning': estadoArqueo === 'sobrante' ||
+                                      estadoArqueo === 'cruzado'
+                    }">
+                S/ {{ diferenciaTotal | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+
+          <div *ngIf="estadoArqueo === 'cuadrado'" class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>
+            El efectivo y los pagos digitales cuadran.
+          </div>
+
+          <div *ngIf="hayDescuadre" class="alert" [ngClass]="estadoArqueo === 'faltante'
+                 ? 'alert-danger' : 'alert-warning'">
+
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Se detectaron diferencias en el arqueo.
+            El cierre quedará registrado para revisión.
+          </div>
+
+          <div *ngIf="hayDescuadre" class="mb-3">
+            <label class="form-label fw-bold">
+              Observación del cierre
+              <span class="text-danger">*</span>
+            </label>
+
+            <textarea class="form-control" rows="3" maxlength="500" placeholder="Explica el motivo de la diferencia..."
+              [disabled]="cerrandoCaja" [(ngModel)]="observacionCierre">
+            </textarea>
+
+            <small class="text-muted">
+              Obligatoria cuando existe un descuadre.
+            </small>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="modal-footer bg-light">
+
+        <button type="button" class="btn btn-outline-secondary" [disabled]="cerrandoCaja" (click)="cerrarModalCierre()">
+          Cancelar
+        </button>
+
+        <button type="button" class="btn btn-danger" [disabled]="!puedeCerrar || cerrandoCaja" (click)="cerrarCaja()">
+
+          <i class="bi bi-lock me-1"></i>
+          {{ cerrandoCaja ? 'Cerrando...' : 'Confirmar cierre' }}
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Fondo oscuro del modal -->
+<div *ngIf="modalCierreAbierto" class="modal-backdrop fade show">
+</div>
