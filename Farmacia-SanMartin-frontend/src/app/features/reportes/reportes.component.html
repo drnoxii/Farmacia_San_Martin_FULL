@@ -3,10 +3,10 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="fw-bold text-dark m-0"><i class="bi bi-bar-chart-line me-2"></i>Reportes</h2>
     <div class="btn-group">
-      <button class="btn btn-outline-success btn-sm" (click)="exportarExcel()" [disabled]="!hayDatos">
+      <button class="btn btn-outline-success btn-sm" (click)="exportarExcel()" [disabled]="!hayDatos || cargando || exportando">
         <i class="bi bi-file-earmark-excel me-1"></i> Excel
       </button>
-      <button class="btn btn-outline-danger btn-sm" (click)="exportarPdf()" [disabled]="!hayDatos">
+      <button class="btn btn-outline-danger btn-sm" (click)="exportarPdf()" [disabled]="!hayDatos || cargando || exportando">
         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
       </button>
     </div>
@@ -79,7 +79,7 @@
 
   <div class="card-header bg-white fw-bold">
     <i class="bi bi-database me-2 text-success"></i>
-    Resumen desde procedimiento almacenado Oracle
+    Resumen general
   </div>
 
   <div class="card-body">
@@ -125,14 +125,6 @@
         </div>
       </div>
 
-      <div class="col-12">
-        <small class="text-muted">
-          Fuente: SAN_MARTIN.SP_RESUMEN_VENTAS.
-          Procedimiento ejecutado desde Java mediante
-          CallableStatement. Incluye ventas de todos los estados.
-        </small>
-      </div>
-
     </div>
 
   </div>
@@ -176,19 +168,38 @@
 
     <div class="card shadow-sm border-0">
       <div class="card-header bg-white fw-bold">Ventas del periodo</div>
+      <div class="card-body border-bottom">
+        <form class="row g-2 align-items-end" (ngSubmit)="buscarVentas()">
+          <div class="col-12 col-md-7 col-lg-5">
+            <label for="buscar-venta" class="form-label small">N.º de venta o cliente</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+              <input id="buscar-venta" name="buscarVenta" type="search" class="form-control" maxlength="100"
+                placeholder="Buscar venta o cliente…" [(ngModel)]="busqueda">
+            </div>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-primary" [disabled]="cargandoDetalle">Buscar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="limpiarBusqueda()">Limpiar</button>
+          </div>
+        </form>
+      </div>
+      <div *ngIf="cargandoDetalle" class="text-center text-muted py-4" role="status">Buscando ventas…</div>
+      <div *ngIf="errorDetalle" class="alert alert-warning m-3" role="alert">{{ errorDetalle }}</div>
+      <ng-container *ngIf="!cargandoDetalle && paginaVentas as pagina">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light text-muted">
             <tr>
               <th class="ps-3">N° Venta</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th>
-              <th>Comprobante</th><th>Pago</th><th class="text-end">Total</th><th class="text-center">Estado</th>
+              <th>Comprobante</th><th>Pago</th><th class="text-end">Total original</th><th class="text-end">Devuelto</th><th class="text-center">Estado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngIf="v.ventas.length === 0">
-              <td colspan="8" class="text-center py-4 text-muted">No hay ventas en este periodo.</td>
+            <tr *ngIf="pagina.ventas.length === 0">
+              <td colspan="10" class="text-center py-4 text-muted">{{ busquedaAplicada ? 'No se encontraron ventas con esa búsqueda en este período.' : 'No hay ventas en este período.' }}</td>
             </tr>
-            <tr *ngFor="let x of v.ventas" [class.text-decoration-line-through]="x.estado === 'ANULADA'">
+            <tr *ngFor="let x of pagina.ventas" [class.text-decoration-line-through]="x.estado === 'ANULADA'">
               <td class="ps-3 fw-bold">{{ x.numeroVenta }}</td>
               <td>{{ fechaHora(x.fecha) }}</td>
               <td>{{ x.cliente }}</td>
@@ -196,13 +207,30 @@
               <td>{{ x.tipoComprobante }}</td>
               <td>{{ x.metodoPago }}</td>
               <td class="text-end">S/ {{ x.total | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ x.totalDevuelto | number:'1.2-2' }}</td>
               <td class="text-center">
                 <span class="badge rounded-pill" [ngClass]="x.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{ x.estado }}</span>
+                <div *ngIf="x.estado === 'EMITIDA' && x.totalDevuelto > 0" class="small text-muted">Devolución parcial</div>
               </td>
+              <td><button class="btn btn-sm btn-outline-primary" (click)="editarDevolucion(x.idVenta)"
+                [attr.title]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
+                [attr.aria-label]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
+                [disabled]="cargandoVenta || guardandoDevolucion">
+                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+              </button></td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <small class="text-muted" aria-live="polite">Mostrando {{ primerResultado }}–{{ ultimoResultado }} de {{ pagina.totalRegistros }} resultados</small>
+        <nav class="d-flex align-items-center gap-2" aria-label="Páginas de ventas">
+          <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina === 0" (click)="cargarPagina(pagina.pagina - 1)">Anterior</button>
+          <span class="small">Página {{ pagina.totalPaginas ? pagina.pagina + 1 : 0 }} de {{ pagina.totalPaginas }}</span>
+          <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina + 1 >= pagina.totalPaginas" (click)="cargarPagina(pagina.pagina + 1)">Siguiente</button>
+        </nav>
+      </div>
+      </ng-container>
     </div>
   </ng-container>
 
@@ -218,7 +246,7 @@
           <thead class="table-light text-muted">
             <tr>
               <th class="ps-3">Código</th><th>Producto</th><th>Categoría</th>
-              <th class="text-end">Stock actual</th><th class="text-end">Mínimo</th><th class="text-end">Faltan</th>
+              <th class="text-end">Stock actual</th><th class="text-end">Mínimo</th><th class="text-end pe-4">Faltan</th>
             </tr>
           </thead>
           <tbody>
@@ -231,7 +259,7 @@
               <td>{{ s.categoria }}</td>
               <td class="text-end text-danger fw-bold">{{ s.stockActual }}</td>
               <td class="text-end">{{ s.stockMinimo }}</td>
-              <td class="text-end">{{ s.faltante }}</td>
+              <td class="text-end pe-4">{{ s.faltante }}</td>
             </tr>
           </tbody>
         </table>
@@ -247,7 +275,7 @@
           <thead class="table-light text-muted">
             <tr>
               <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Vencimiento</th>
-              <th class="text-end">Stock</th><th class="text-center">Faltan</th>
+              <th class="text-end">Stock</th><th class="text-center pe-4">Faltan</th>
             </tr>
           </thead>
           <tbody>
@@ -260,7 +288,7 @@
               <td>{{ l.numeroLote }}</td>
               <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
               <td class="text-end">{{ l.stock }}</td>
-              <td class="text-center">
+              <td class="text-center pe-4">
                 <span class="badge" [ngClass]="l.diasRestantes <= 7 ? 'bg-danger' : 'bg-warning text-dark'">{{ l.diasRestantes }} días</span>
               </td>
             </tr>
@@ -278,7 +306,7 @@
           <thead class="table-light text-muted">
             <tr>
               <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Venció</th>
-              <th class="text-end">Stock</th><th class="text-center">Hace</th>
+              <th class="text-end">Stock</th><th class="text-center pe-4">Hace</th>
             </tr>
           </thead>
           <tbody>
@@ -291,7 +319,7 @@
               <td>{{ l.numeroLote }}</td>
               <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
               <td class="text-end">{{ l.stock }}</td>
-              <td class="text-center"><span class="badge bg-dark">{{ diasVencido(l.diasRestantes) }} días</span></td>
+              <td class="text-center pe-4"><span class="badge bg-dark">{{ diasVencido(l.diasRestantes) }} días</span></td>
             </tr>
           </tbody>
         </table>
@@ -379,3 +407,46 @@
     </table>
   </div>
 </ng-template>
+
+<div *ngIf="ventaEditar as venta" class="modal d-block" role="dialog" aria-modal="true"
+  aria-labelledby="titulo-devolucion" tabindex="-1" style="background: rgba(0,0,0,.5)"
+  (keydown.escape)="!guardandoDevolucion && (ventaEditar = null)">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="titulo-devolucion">Devolución · {{ venta.numeroVenta }}</h5>
+        <button class="btn-close" aria-label="Cerrar" [disabled]="guardandoDevolucion" (click)="ventaEditar = null"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="resultadoDevolucion as resultado" class="alert alert-success" role="status">
+          <strong>Devolución registrada: S/ {{ resultado.importeDevuelto | number:'1.2-2' }}</strong>
+          <div *ngFor="let lote of resultado.lotes">
+            {{ lote.producto }} · Lote {{ lote.numeroLote }} · Stock actual: <strong>{{ lote.stockActual }}</strong>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Código</th><th>Producto / lote</th><th>Cantidad</th><th class="text-end">Importe</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let d of venta.detalles">
+                <td>{{ d.codigoProducto || '—' }}</td>
+                <td>{{ d.nombreProducto }}<div class="text-muted small">{{ d.numeroLote }}</div></td>
+                <td>{{ d.cantidad }}</td>
+                <td class="text-end">S/ {{ d.cantidad * d.precioUnitario | number:'1.2-2' }}</td>
+                <td><span class="badge" [ngClass]="d.estado === 'D' ? 'bg-warning text-dark' : 'bg-success'">{{ d.estado === 'D' ? 'Devuelto' : 'Vendido' }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="venta.estado === 'EMITIDA'" class="text-end fw-bold">Total a devolver: S/ {{ importeDevolucion | number:'1.2-2' }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" [disabled]="guardandoDevolucion" (click)="ventaEditar = null">Cerrar</button>
+        <button *ngIf="venta.estado === 'EMITIDA'" class="btn btn-primary" (click)="guardarDevolucion()"
+          [disabled]="guardandoDevolucion || !detallesADevolver.length">
+          {{ guardandoDevolucion ? 'Guardando...' : 'Anular y devolver al stock' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

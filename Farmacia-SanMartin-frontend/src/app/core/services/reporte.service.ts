@@ -7,6 +7,8 @@ import {
   ReporteCierres,
   ReporteInventario,
   ReporteVentas,
+  ResumenVentas,
+  PaginaVentas,
   ResumenVentasSP
 } from '../interfaces/reporte.interface';
 
@@ -18,6 +20,19 @@ export class ReporteService {
   private apiUrl = '/api/v1/reportes';
 
   constructor(private http: HttpClient) {}
+
+  resumenVentas(desde: string, hasta: string): Observable<ResumenVentas> {
+    return this.http.get<ResumenVentas>(`${this.apiUrl}/ventas/resumen`, {
+      params: new HttpParams().set('desde', desde).set('hasta', hasta)
+    });
+  }
+
+  detalleVentas(desde: string, hasta: string, buscar: string, pagina: number): Observable<PaginaVentas> {
+    return this.http.get<PaginaVentas>(`${this.apiUrl}/ventas/detalle`, {
+      params: new HttpParams().set('desde', desde).set('hasta', hasta)
+        .set('buscar', buscar).set('pagina', pagina).set('tamano', 20)
+    });
+  }
 
   // ==========================================
   // 1. REPORTE DE VENTAS

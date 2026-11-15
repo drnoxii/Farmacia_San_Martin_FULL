@@ -1,10 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ExportService, Hoja } from '../../core/services/export.service';
 import { AlertService } from '../../core/services/alert.service';
-import { ReporteCierres, ReporteInventario, ReporteVentas, ResumenVentasSP } from '../../core/interfaces/reporte.interface';
+import { VentaService } from '../../core/services/venta.service';
+import { VentaResponse } from '../../core/interfaces/venta-response.interface';
+import { DevolucionVentaResponse } from '../../core/interfaces/devolucion-venta.interface';
+import { ReporteCierres, ReporteInventario, ReporteVentas, ResumenVentasSP, ResumenVentas, PaginaVentas } from '../../core/interfaces/reporte.interface';
 
 
 type Tab = 'ventas' | 'inventario' | 'cierres';
@@ -17,11 +21,79 @@ type Periodo = 'hoy' | 'semana' | 'mes' | 'rango';
   templateUrl: './reportes.component.html',
   styleUrl: './reportes.component.css'
 })
-export class ReportesComponent implements OnInit {
+export class ReportesComponent implements OnInit, OnDestroy {
 
   private reporteService = inject(ReporteService);
   private exportService = inject(ExportService);
   private alert = inject(AlertService);
+  private ventaService = inject(VentaService);
+
+  ventaEditar: VentaResponse | null = null;
+  cargandoVenta = false;
+  guardandoDevolucion = false;
+  resultadoDevolucion: DevolucionVentaResponse | null = null;
+
+  editarDevolucion(id: number): void {
+    if (this.cargandoVenta || this.guardandoDevolucion) return;
+    this.cargandoVenta = true;
+    this.resultadoDevolucion = null;
+    this.ventaService.buscarVenta(id).subscribe({
+      next: venta => {
+        this.ventaEditar = venta;
+        this.cargandoVenta = false;
+      },
+      error: () => {
+        this.cargandoVenta = false;
+        this.alert.error('No se pudo cargar la venta.');
+      }
+    });
+  }
+
+  get detallesADevolver(): number[] {
+    return this.ventaEditar?.detalles
+      .filter(d => d.estado === 'V' && this.ventaEditar?.estado === 'EMITIDA')
+      .map(d => d.idDetalleVenta) ?? [];
+  }
+
+  get importeDevolucion(): number {
+    return this.ventaEditar?.detalles
+      .filter(d => d.estado === 'V' && this.ventaEditar?.estado === 'EMITIDA')
+      .reduce((total, d) => total + d.cantidad * d.precioUnitario, 0) ?? 0;
+  }
+
+  async guardarDevolucion(): Promise<void> {
+    if (!this.ventaEditar || this.guardandoDevolucion || !this.detallesADevolver.length) return;
+    let idUsuario: number;
+    try { idUsuario = Number(JSON.parse(localStorage.getItem('usuario') || '{}').idUsuario); }
+    catch { idUsuario = 0; }
+    if (!Number.isInteger(idUsuario) || idUsuario <= 0) {
+      this.alert.error('Inicia sesión para registrar la devolución.');
+      return;
+    }
+    const venta = this.ventaEditar;
+    const idDetalles = this.detallesADevolver;
+    this.guardandoDevolucion = true;
+    const confirmado = await this.alert.confirm(
+      `Se devolverán todos los productos pendientes de ${venta.numeroVenta} por S/ ${this.importeDevolucion.toFixed(2)}. Sus cantidades regresarán al stock y la venta quedará anulada.`,
+      'Confirmar devolución');
+    if (!confirmado) { this.guardandoDevolucion = false; return; }
+    this.ventaService.devolver(venta.idVenta, idUsuario, idDetalles).subscribe({
+      next: resultado => {
+        this.resultadoDevolucion = resultado;
+        venta.detalles.filter(d => idDetalles.includes(d.idDetalleVenta)).forEach(d => d.estado = 'D');
+        if (venta.detalles.every(d => d.estado === 'D')) venta.estado = 'ANULADA';
+        this.guardandoDevolucion = false;
+        this.inventario = null;
+        this.cierres = null;
+        this.cargar();
+      },
+      error: err => {
+        this.guardandoDevolucion = false;
+        this.alert.error(err.error?.detail || err.error?.message ||
+          'No se pudo registrar la devolución. Cierra y vuelve a abrir la venta para actualizar su estado.');
+      }
+    });
+  }
 
   tab: Tab = 'ventas';
   periodo: Periodo = 'hoy';
@@ -30,7 +102,15 @@ export class ReportesComponent implements OnInit {
   dias = 30;
   cargando = false;
 
-  ventas: ReporteVentas | null = null;
+  ventas: ResumenVentas | null = null;
+  paginaVentas: PaginaVentas | null = null;
+  busqueda = '';
+  busquedaAplicada = '';
+  cargandoDetalle = false;
+  errorDetalle = '';
+  exportando = false;
+  private consultas = new Subscription();
+  private consultaDetalle?: Subscription;
   inventario: ReporteInventario | null = null;
   cierres: ReporteCierres | null = null;
   resumenSP: ResumenVentasSP | null = null;
@@ -40,6 +120,48 @@ export class ReportesComponent implements OnInit {
 
   ngOnInit(): void {
     this.setPeriodo('hoy');
+  }
+
+  ngOnDestroy(): void {
+    this.consultas.unsubscribe();
+    this.consultaDetalle?.unsubscribe();
+  }
+
+  buscarVentas(): void {
+    this.busquedaAplicada = this.busqueda.trim();
+    this.cargarPagina(0);
+  }
+
+  limpiarBusqueda(): void {
+    this.busqueda = '';
+    this.buscarVentas();
+  }
+
+  cargarPagina(pagina: number): void {
+    if (!this.ventas || pagina < 0) return;
+    this.consultaDetalle?.unsubscribe();
+    this.cargandoDetalle = true;
+    this.errorDetalle = '';
+    this.consultaDetalle = this.reporteService.detalleVentas(
+      this.ventas.desde, this.ventas.hasta, this.busquedaAplicada, pagina
+    ).subscribe({
+      next: resultado => { this.paginaVentas = resultado; this.cargandoDetalle = false; },
+      error: () => {
+        this.paginaVentas = null;
+        this.cargandoDetalle = false;
+        this.errorDetalle = 'No se pudo cargar la lista de ventas. Vuelve a pulsar Buscar.';
+      }
+    });
+  }
+
+  get primerResultado(): number {
+    const p = this.paginaVentas;
+    return p && p.totalRegistros > 0 ? p.pagina * p.tamano + 1 : 0;
+  }
+
+  get ultimoResultado(): number {
+    const p = this.paginaVentas;
+    return p && p.totalRegistros > 0 ? p.pagina * p.tamano + p.ventas.length : 0;
   }
 
   // ---------- Filtros ----------
@@ -77,6 +199,10 @@ export class ReportesComponent implements OnInit {
       }
     }
 
+    this.consultas.unsubscribe();
+    this.consultas = new Subscription();
+    this.consultaDetalle?.unsubscribe();
+    this.cargandoDetalle = false;
     this.cargando = true;
     const fin = () => (this.cargando = false);
     const fallo = (err: any) => {
@@ -85,47 +211,40 @@ export class ReportesComponent implements OnInit {
     };
 
     
-if (this.tab === 'ventas') {
-  const desde = this.desde;
-  const hasta = this.hasta;
-
-  this.resumenSP = null;
-  this.errorResumenSP = '';
-  this.cargandoResumenSP = true;
-
-  this.reporteService.ventas(desde, hasta).subscribe({
-    next: r => {
-      this.ventas = r;
-      fin();
-
-      this.reporteService.resumenVentasSP(desde, hasta).subscribe({
-        next: (resultado: ResumenVentasSP) => {
-          this.resumenSP = resultado;
-          this.cargandoResumenSP = false;
+    if (this.tab === 'ventas') {
+      const desde = this.desde;
+      const hasta = this.hasta;
+      this.ventas = null;
+      this.paginaVentas = null;
+      this.resumenSP = null;
+      this.errorResumenSP = '';
+      this.cargandoResumenSP = true;
+      this.consultas.add(this.reporteService.resumenVentas(desde, hasta).subscribe({
+        next: r => {
+          this.ventas = r;
+          fin();
+          this.cargarPagina(0);
         },
+        error: fallo
+      }));
+      this.consultas.add(this.reporteService.resumenVentasSP(desde, hasta).subscribe({
+        next: r => { this.resumenSP = r; this.cargandoResumenSP = false; },
         error: () => {
           this.cargandoResumenSP = false;
-          this.errorResumenSP =
-            'No se pudo consultar el procedimiento almacenado.';
+          this.errorResumenSP = 'No se pudo consultar el resumen general.';
         }
-      });
-    },
-    error: err => {
-      this.cargandoResumenSP = false;
-      fallo(err);
-    }
-  });
-}else if (this.tab === 'inventario') {
-      this.reporteService.inventario(this.dias)
-        .subscribe({ next: r => { this.inventario = r; fin(); }, error: fallo });
+      }));
+    } else if (this.tab === 'inventario') {
+      this.consultas.add(this.reporteService.inventario(this.dias)
+        .subscribe({ next: r => { this.inventario = r; fin(); }, error: fallo }));
     } else {
-      this.reporteService.cierres(this.desde, this.hasta)
-        .subscribe({ next: r => { this.cierres = r; fin(); }, error: fallo });
+      this.consultas.add(this.reporteService.cierres(this.desde, this.hasta)
+        .subscribe({ next: r => { this.cierres = r; fin(); }, error: fallo }));
     }
   }
 
   get hayDatos(): boolean {
-    if (this.tab === 'ventas') return !!this.ventas && this.ventas.ventas.length > 0;
+    if (this.tab === 'ventas') return !!this.ventas && this.ventas.totalRegistros > 0;
     if (this.tab === 'inventario') return !!this.inventario;
     return !!this.cierres && this.cierres.cierres.length > 0;
   }
@@ -165,9 +284,9 @@ if (this.tab === 'ventas') {
       : `Del ${this.fechaCorta(this.desde)} al ${this.fechaCorta(this.hasta)}`;
   }
 
-  private hojas(): Hoja[] {
-    if (this.tab === 'ventas' && this.ventas) {
-      const v = this.ventas;
+  private hojas(ventasCompletas?: ReporteVentas): Hoja[] {
+    if (ventasCompletas) {
+      const v = ventasCompletas;
       return [
         {
           nombre: 'Resumen',
@@ -183,10 +302,10 @@ if (this.tab === 'ventas') {
         },
         {
           nombre: 'Ventas',
-          columnas: ['N° Venta', 'Fecha', 'Cliente', 'Vendedor', 'Comprobante', 'Pago', 'Total (S/)', 'Estado'],
+          columnas: ['N° Venta', 'Fecha', 'Cliente', 'Vendedor', 'Comprobante', 'Pago', 'Total original (S/)', 'Devuelto (S/)', 'Estado'],
           filas: v.ventas.map(x => [x.numeroVenta, this.fechaHora(x.fecha), x.cliente, x.vendedor,
-            x.tipoComprobante, x.metodoPago, x.total, x.estado]),
-          dinero: [6]
+            x.tipoComprobante, x.metodoPago, x.total, x.totalDevuelto, x.estado]),
+          dinero: [6, 7]
         }
       ];
     }
@@ -219,18 +338,33 @@ if (this.tab === 'ventas') {
   }
 
   async exportarExcel(): Promise<void> {
-    try {
-      await this.exportService.excel(this.nombreArchivo, this.hojas());
-    } catch {
-      this.alert.error('No se pudo generar el Excel.');
-    }
+    await this.exportar('excel');
   }
 
   async exportarPdf(): Promise<void> {
+    await this.exportar('pdf');
+  }
+
+  private async exportar(formato: 'excel' | 'pdf'): Promise<void> {
+    if (this.exportando || this.cargando || !this.hayDatos) return;
+    this.exportando = true;
+    const nombre = this.nombreArchivo;
+    const titulo = this.titulo;
+    const subtitulo = this.tab === 'ventas' && this.ventas
+      ? `Del ${this.fechaCorta(this.ventas.desde)} al ${this.fechaCorta(this.ventas.hasta)}` : this.subtitulo;
+    const resumen = this.tab === 'ventas' ? this.ventas : null;
+    const hojasActuales = resumen ? [] : this.hojas();
     try {
-      await this.exportService.pdf(this.nombreArchivo, this.titulo, this.subtitulo, this.hojas());
+      // La exportación incluye todo el período, no solo la página o búsqueda visibles.
+      const hojas = resumen
+        ? this.hojas(await firstValueFrom(this.reporteService.ventas(resumen.desde, resumen.hasta)))
+        : hojasActuales;
+      if (formato === 'excel') await this.exportService.excel(nombre, hojas);
+      else await this.exportService.pdf(nombre, titulo, subtitulo, hojas);
     } catch {
-      this.alert.error('No se pudo generar el PDF.');
+      this.alert.error(`No se pudo generar el ${formato === 'excel' ? 'Excel' : 'PDF'}.`);
+    } finally {
+      this.exportando = false;
     }
   }
 }

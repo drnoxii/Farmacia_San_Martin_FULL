@@ -21,6 +21,25 @@ public class ReporteController {
         this.reporteService = reporteService;
     }
 
+    @GetMapping("/ventas/detalle")
+    public Map<String, Object> detalleVentas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "") String buscar,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "20") int tamano) {
+        validarFechas(desde, hasta);
+        return reporteService.detalleVentas(desde, hasta, buscar, pagina, tamano);
+    }
+
+    @GetMapping("/ventas/resumen")
+    public Map<String, Object> resumenVentas(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        validarFechas(desde, hasta);
+        return reporteService.resumenVentas(desde, hasta);
+    }
+
     // ==========================================
     // 1. REPORTE DE VENTAS MEDIANTE SQL
     // ==========================================

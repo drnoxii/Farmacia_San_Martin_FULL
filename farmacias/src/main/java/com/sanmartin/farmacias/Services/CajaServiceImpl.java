@@ -143,6 +143,7 @@ public class CajaServiceImpl implements ICajaService {
      *          (monto inicial + ventas en efectivo).
      */
     @Override
+    @Transactional
     public CajaDTO cerrar(Long idCaja, CajaCierreDTO dto) {
 
         // 1. La caja debe existir.
@@ -258,7 +259,10 @@ public class CajaServiceImpl implements ICajaService {
         return ventas.stream()
                 .filter(v -> v.getEstado() == EstadoVenta.EMITIDA)   // ignora anuladas
                 .filter(v -> v.getMetodoPago() == metodo)            // solo el método pedido
-                .map(Venta::getTotal)                                // toma el total de cada venta
+                .map(v -> v.getTotal().subtract(v.getDetalles().stream()
+                        .filter(d -> d.getEstado() == com.sanmartin.farmacias.Entity.EstadoDetalleVenta.D)
+                        .map(d -> d.getPrecioUnitario().multiply(d.getCantidad()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);           // empieza en 0 y va sumando
     }
 

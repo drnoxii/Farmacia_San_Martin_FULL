@@ -183,6 +183,7 @@ public class VentaServiceImpl implements IVentaService{
                 d.getLote().getNumeroLote(),
                 d.getLote().getFechaVencimiento(),
                 producto.getIdProducto(),
+                producto.getCodigo(),
                 producto.getNombreProducto(),
                 d.getCantidad(),
                 d.getPrecioUnitario(),

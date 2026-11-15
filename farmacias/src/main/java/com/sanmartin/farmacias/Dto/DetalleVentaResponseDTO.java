@@ -15,6 +15,7 @@ public record DetalleVentaResponseDTO(
         String numeroLote,
         LocalDate fechaVencimiento,
         Long idProducto,
+        String codigoProducto,
         String nombreProducto,
         BigDecimal cantidad,
         BigDecimal precioUnitario,

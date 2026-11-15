@@ -24,6 +24,79 @@ public class ReporteService {
         this.jdbc = jdbc;
     }
 
+    private static final String VENTAS_PERIODO = """
+        SELECT V.ID_VENTA AS "idVenta", V.NUMERO_VENTA AS "numeroVenta",
+               TO_CHAR(V.FECHA_VENTA, 'YYYY-MM-DD"T"HH24:MI:SS') AS "fecha",
+               NVL(PC.NOMBRE, 'Público general') AS "cliente",
+               NVL(PU.NOMBRE, 'Sin vendedor') AS "vendedor",
+               V.TIPO_COMPROBANTE AS "tipoComprobante", V.METODO_PAGO AS "metodoPago",
+               NVL(V.TOTAL, 0) AS "total", V.ESTADO AS "estado",
+               NVL((SELECT SUM(D.CANTIDAD * D.PRECIO_UNITARIO)
+                    FROM SAN_MARTIN.DETALLE_VENTA D
+                    WHERE D.ID_VENTA = V.ID_VENTA AND D.ESTADO = 'D'), 0) AS "totalDevuelto"
+        FROM SAN_MARTIN.VENTA V
+        LEFT JOIN SAN_MARTIN.CLIENTE C ON C.ID_CLIENTE = V.ID_CLIENTE
+        LEFT JOIN SAN_MARTIN.PERSONA PC ON PC.ID_PERSONA = C.ID_PERSONA
+        LEFT JOIN SAN_MARTIN.USUARIO U ON U.ID_USUARIO = V.ID_USUARIO
+        LEFT JOIN SAN_MARTIN.PERSONA PU ON PU.ID_PERSONA = U.ID_PERSONA
+        WHERE V.FECHA_VENTA >= ? AND V.FECHA_VENTA < ?
+        """;
+
+    public Map<String, Object> detalleVentas(LocalDate desde, LocalDate hasta,
+                                            String buscar, int pagina, int tamano) {
+        if (desde.isAfter(hasta) || pagina < 0 || tamano < 1 || tamano > 100
+                || buscar.length() > 100) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Filtros de búsqueda inválidos.");
+        }
+        var parametros = new ArrayList<Object>();
+        parametros.add(Timestamp.valueOf(desde.atStartOfDay()));
+        parametros.add(Timestamp.valueOf(hasta.plusDays(1).atStartOfDay()));
+        String consulta = " FROM (" + VENTAS_PERIODO + ") R";
+        String texto = buscar.trim();
+        if (!texto.isEmpty()) {
+            // INSTR trata %, _ y comillas como texto, no como comodines SQL.
+            consulta += " WHERE INSTR(UPPER(\"numeroVenta\"), UPPER(?)) > 0"
+                    + " OR INSTR(UPPER(\"cliente\"), UPPER(?)) > 0";
+            parametros.add(texto);
+            parametros.add(texto);
+        }
+        Long total = jdbc.queryForObject("SELECT COUNT(*)" + consulta, Long.class, parametros.toArray());
+        long totalRegistros = total == null ? 0 : total;
+        long totalPaginas = (totalRegistros + tamano - 1) / tamano;
+        int paginaActual = (int) Math.min(pagina, Math.max(0, totalPaginas - 1));
+        parametros.add((long) paginaActual * tamano);
+        parametros.add(tamano);
+        var ventas = jdbc.queryForList("SELECT R.*" + consulta
+                + " ORDER BY \"fecha\" DESC, \"idVenta\" DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY",
+                parametros.toArray());
+        return Map.of("ventas", ventas, "totalRegistros", totalRegistros,
+                "totalPaginas", totalPaginas, "pagina", paginaActual, "tamano", tamano);
+    }
+
+    public Map<String, Object> resumenVentas(LocalDate desde, LocalDate hasta) {
+        Object[] fechas = {Timestamp.valueOf(desde.atStartOfDay()), Timestamp.valueOf(hasta.plusDays(1).atStartOfDay())};
+        String fuente = " FROM (" + VENTAS_PERIODO + ") R";
+        var respuesta = new LinkedHashMap<String, Object>(jdbc.queryForMap("""
+            SELECT NVL(SUM(CASE WHEN "estado" = 'EMITIDA' THEN "total" - "totalDevuelto" ELSE 0 END), 0) AS "totalVendido",
+                   COUNT(CASE WHEN "estado" = 'EMITIDA' THEN 1 END) AS "cantidadVentas",
+                   NVL(SUM(CASE WHEN "estado" = 'ANULADA' THEN "total" ELSE 0 END), 0) AS "totalAnulado",
+                   COUNT(CASE WHEN "estado" = 'ANULADA' THEN 1 END) AS "cantidadAnuladas",
+                   COUNT(*) AS "totalRegistros"
+            """ + fuente, fechas));
+        // Los nombres de columna son constantes internas, nunca valores recibidos del cliente.
+        for (var grupo : Map.of("porMetodoPago", "metodoPago", "porComprobante", "tipoComprobante",
+                "porVendedor", "vendedor").entrySet()) {
+            String campo = "NVL(\"" + grupo.getValue() + "\", 'Sin especificar')";
+            respuesta.put(grupo.getKey(), jdbc.queryForList("SELECT " + campo
+                    + " AS \"etiqueta\", COUNT(*) AS \"cantidad\", SUM(\"total\" - \"totalDevuelto\") AS \"total\""
+                    + fuente + " WHERE \"estado\" = 'EMITIDA' GROUP BY " + campo + " ORDER BY " + campo, fechas));
+        }
+        respuesta.put("desde", desde.toString());
+        respuesta.put("hasta", hasta.toString());
+        return respuesta;
+    }
+
     // ==========================================
     // 1. REPORTE DE VENTAS MEDIANTE SQL
     // ==========================================
@@ -33,6 +106,7 @@ public class ReporteService {
 
         String sql = """
             SELECT
+                V.ID_VENTA,
                 V.NUMERO_VENTA,
                 V.FECHA_VENTA,
                 NVL(PC.NOMBRE, 'Público general') AS CLIENTE,
@@ -40,6 +114,9 @@ public class ReporteService {
                 V.TIPO_COMPROBANTE,
                 V.METODO_PAGO,
                 V.TOTAL,
+                NVL((SELECT SUM(D.CANTIDAD * D.PRECIO_UNITARIO)
+                     FROM SAN_MARTIN.DETALLE_VENTA D
+                     WHERE D.ID_VENTA = V.ID_VENTA AND D.ESTADO = 'D'), 0) AS DEVUELTO,
                 V.ESTADO
             FROM SAN_MARTIN.VENTA V
             LEFT JOIN SAN_MARTIN.CLIENTE C
@@ -78,6 +155,7 @@ public class ReporteService {
                     : new BigDecimal(r.get("TOTAL").toString());
 
             String estado = String.valueOf(r.get("ESTADO"));
+            BigDecimal devuelto = new BigDecimal(r.get("DEVUELTO").toString());
 
             if ("ANULADA".equalsIgnoreCase(estado)) {
                 cantidadAnuladas++;
@@ -85,10 +163,12 @@ public class ReporteService {
 
             } else if ("EMITIDA".equalsIgnoreCase(estado)) {
                 cantidadVentas++;
-                totalVendido = totalVendido.add(total);
+                totalVendido = totalVendido.add(total.subtract(devuelto));
             }
 
             Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("idVenta", r.get("ID_VENTA"));
+            fila.put("totalDevuelto", devuelto);
 
             fila.put("numeroVenta", r.get("NUMERO_VENTA"));
 
@@ -165,7 +245,7 @@ public class ReporteService {
                     : venta.get(campo).toString();
 
             BigDecimal monto =
-                    (BigDecimal) venta.get("total");
+                    ((BigDecimal) venta.get("total")).subtract((BigDecimal) venta.get("totalDevuelto"));
 
             cantidades.merge(
                     etiqueta,
@@ -423,12 +503,13 @@ public class ReporteService {
 
                 NVL(C.MONTO_INICIAL, 0) AS "montoInicial",
 
-                NVL(V.VENTAS_EFECTIVO, 0) AS "ventasEfectivo",
+                NVL(C.MONTO_FINAL - C.DIFERENCIA - NVL(C.MONTO_INICIAL, 0),
+                    NVL(V.VENTAS_EFECTIVO, 0)) AS "ventasEfectivo",
 
-                (
+                NVL(C.MONTO_FINAL - C.DIFERENCIA, (
                     NVL(C.MONTO_INICIAL, 0) +
                     NVL(V.VENTAS_EFECTIVO, 0)
-                ) AS "esperado",
+                )) AS "esperado",
 
                 NVL(C.MONTO_FINAL, 0) AS "contado",
 
@@ -450,12 +531,17 @@ public class ReporteService {
                         CASE
                             WHEN UPPER(TRIM(METODO_PAGO)) = 'EFECTIVO'
                              AND UPPER(TRIM(ESTADO)) = 'EMITIDA'
-                            THEN NVL(TOTAL, 0)
+                            THEN NVL(TOTAL, 0) - NVL(DV.DEVUELTO, 0)
                             ELSE 0
                         END
                     ) AS VENTAS_EFECTIVO
 
-                FROM SAN_MARTIN.VENTA
+                FROM SAN_MARTIN.VENTA VT
+                LEFT JOIN (
+                    SELECT ID_VENTA, SUM(CANTIDAD * PRECIO_UNITARIO) AS DEVUELTO
+                    FROM SAN_MARTIN.DETALLE_VENTA WHERE ESTADO = 'D'
+                    GROUP BY ID_VENTA
+                ) DV ON DV.ID_VENTA = VT.ID_VENTA
                 GROUP BY ID_CAJA
 
             ) V ON C.ID_CAJA = V.ID_CAJA
@@ -481,8 +567,28 @@ public class ReporteService {
         Map<String, Object> respuesta =
                 new LinkedHashMap<>();
 
+        BigDecimal totalSobrantes = BigDecimal.ZERO;
+        BigDecimal totalFaltantes = BigDecimal.ZERO;
+
+        for (Map<String, Object> cierre : cierres) {
+            Object valor = cierre.get("diferencia");
+
+            BigDecimal diferencia = valor == null
+                    ? BigDecimal.ZERO
+                    : new BigDecimal(valor.toString());
+
+            if (diferencia.signum() > 0) {
+                totalSobrantes = totalSobrantes.add(diferencia);
+            } else if (diferencia.signum() < 0) {
+                totalFaltantes = totalFaltantes.add(diferencia.abs());
+            }
+        }
+
         respuesta.put("desde", desde.toString());
         respuesta.put("hasta", hasta.toString());
+        respuesta.put("cantidad", cierres.size());
+        respuesta.put("totalSobrantes", totalSobrantes);
+        respuesta.put("totalFaltantes", totalFaltantes);
         respuesta.put("cierres", cierres);
 
         return respuesta;

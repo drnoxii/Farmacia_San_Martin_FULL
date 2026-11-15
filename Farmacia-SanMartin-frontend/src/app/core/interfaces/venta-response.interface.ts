@@ -4,6 +4,7 @@ export interface DetalleVentaResponse {
   numeroLote: string;
   fechaVencimiento: string;
   idProducto: number;
+  codigoProducto: string;
   nombreProducto: string;
   cantidad: number;
   precioUnitario: number;

@@ -2,6 +2,9 @@ package com.sanmartin.farmacias.Controller;
 
 import com.sanmartin.farmacias.Dto.VentaRequestDTO;
 import com.sanmartin.farmacias.Dto.VentaResponseDTO;
+import com.sanmartin.farmacias.Dto.DevolucionVentaRequestDTO;
+import com.sanmartin.farmacias.Dto.DevolucionVentaResponseDTO;
+import com.sanmartin.farmacias.Services.DevolucionVentaService;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.IVentaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,9 +24,11 @@ import java.util.List;
 public class VentaController {
 
     private final IVentaService ventaServices;
+    private final DevolucionVentaService devoluciones;
 
-    public VentaController(IVentaService ventaServices) {
+    public VentaController(IVentaService ventaServices, DevolucionVentaService devoluciones) {
         this.ventaServices = ventaServices;
+        this.devoluciones = devoluciones;
     }
 
     @GetMapping
@@ -55,6 +60,13 @@ public class VentaController {
     public ResponseEntity<VentaResponseDTO> registrar(
             @RequestBody @Valid VentaRequestDTO dto) {
         return new ResponseEntity<>(ventaServices.registrar(dto), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{id}/devoluciones")
+    @Operation(summary = "Anular detalles de venta y devolver sus cantidades al lote original")
+    public ResponseEntity<DevolucionVentaResponseDTO> devolver(@PathVariable Long id,
+            @RequestBody @Valid DevolucionVentaRequestDTO dto) {
+        return ResponseEntity.ok(devoluciones.devolver(id, dto));
     }
 
     public ResponseEntity<VentaResponseDTO> obtenerComprobante(@PathVariable Long id){

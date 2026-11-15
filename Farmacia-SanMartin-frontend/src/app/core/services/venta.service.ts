@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { VentaRequest } from '../interfaces/venta.interface';
 import { Observable } from 'rxjs';
 import { VentaResponse } from '../interfaces/venta-response.interface';
+import { DevolucionVentaResponse } from '../interfaces/devolucion-venta.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,10 @@ export class VentaService {
 
   buscarVenta(id: number): Observable<VentaResponse> {
     return this.http.get<VentaResponse>(`${this.apiUrl}/${id}`);
+  }
+
+  devolver(id: number, idUsuario: number, idDetalles: number[]): Observable<DevolucionVentaResponse> {
+    return this.http.post<DevolucionVentaResponse>(`${this.apiUrl}/${id}/devoluciones`, { idUsuario, idDetalles });
   }
 
 

@@ -1,6 +1,7 @@
 export interface ItemResumen { etiqueta: string; cantidad: number; total: number; }
 
 export interface VentaFila {
+  idVenta: number; totalDevuelto: number;
   numeroVenta: string; fecha: string; cliente: string; vendedor: string;
   tipoComprobante: string; metodoPago: string; total: number; estado: 'EMITIDA' | 'ANULADA';
 }
@@ -11,6 +12,18 @@ export interface ReporteVentas {
   cantidadAnuladas: number; totalAnulado: number;
   porMetodoPago: ItemResumen[]; porComprobante: ItemResumen[]; porVendedor: ItemResumen[];
   ventas: VentaFila[];
+}
+
+export interface ResumenVentas extends Omit<ReporteVentas, 'ventas'> {
+  totalRegistros: number;
+}
+
+export interface PaginaVentas {
+  ventas: VentaFila[];
+  totalRegistros: number;
+  totalPaginas: number;
+  pagina: number;
+  tamano: number;
 }
 
 export interface StockBajoFila {
