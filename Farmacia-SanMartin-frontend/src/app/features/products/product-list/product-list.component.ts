@@ -18,7 +18,7 @@ import { AlertService } from '../../../core/services/alert.service';
 })
 export class ProductListComponent implements OnInit {
 
-private productoService = inject(ProductoService);
+  private productoService = inject(ProductoService);
   private loteService = inject(LoteService);
   private alertService = inject(AlertService);
 
@@ -29,6 +29,8 @@ private productoService = inject(ProductoService);
   // Variables para el Modal de Lotes
   lotesDelProducto: Lote[] = [];
   productoSeleccionado: Producto | null = null;
+  cargandoLotes: boolean = false;
+  errorLotes: boolean = false;
 
   ngOnInit() {
     this.cargarProductos();
@@ -48,16 +50,26 @@ private productoService = inject(ProductoService);
   }
 
   get productosFiltrados() {
-    return this.productos.filter(p => 
-      (p.nombreProducto?.toLowerCase() || '').includes(this.busqueda.toLowerCase()) ||
-      (p.codigo?.toLowerCase() || '').includes(this.busqueda.toLowerCase())
+    const termino = this.busqueda.trim().toLowerCase();
+
+    return this.productos.filter(p =>
+      [
+        p.codigo,
+        p.nombreProducto,
+        p.presentacion,
+        p.descripcion,
+        p.nombreCategoria,
+        p.idLaboratorio?.toString(),
+      ].some(valor =>
+        String(valor ?? '').toLowerCase().includes(termino)
+      )
     );
   }
 
   // 1. Cambiar Estado (Solo ACTIVO / INACTIVO)
   async cambiarEstado(p: Producto) {
     const nuevoEstado: 'ACTIVO' | 'INACTIVO' = p.estadoGeneral === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-    
+
     const confirmado = await this.alertService.confirm(
       `¿Deseas cambiar el estado de ${p.nombreProducto} a ${nuevoEstado}?`,
       'Confirmar Cambio'
@@ -65,7 +77,7 @@ private productoService = inject(ProductoService);
 
     if (confirmado) {
       const productoActualizado: Producto = { ...p, estadoGeneral: nuevoEstado };
-      
+
       this.productoService.actualizar(p.idProducto!, productoActualizado).subscribe({
         next: () => {
           this.alertService.toast(`Producto ${nuevoEstado.toLowerCase()} correctamente`);
@@ -78,12 +90,41 @@ private productoService = inject(ProductoService);
 
   // 2. Abrir Modal de Lotes
   verLotes(p: Producto) {
-    this.productoSeleccionado = p;
-    this.lotesDelProducto = []; // Limpiamos los anteriores
-    
-    this.loteService.listarPorProducto(p.idProducto!).subscribe({
-      next: (lotes) => this.lotesDelProducto = lotes,
-      error: () => this.alertService.error('Error al cargar los lotes')
-    });
-  }
+  this.productoSeleccionado = p;
+  this.lotesDelProducto = [];
+  this.cargandoLotes = true;
+  this.errorLotes = false;
+
+  this.loteService.listarPorProducto(p.idProducto!).subscribe({
+    next: (lotes) => {
+      this.lotesDelProducto = lotes;
+      this.cargandoLotes = false;
+    },
+    error: (err) => {
+      console.error('Error al cargar lotes:', err);
+      this.errorLotes = true;
+      this.cargandoLotes = false;
+    }
+  });
+}
+
+esLoteVencido(lote: Lote): boolean {
+  if (!lote.fechaVencimiento) return false;
+
+  const fechaVencimiento = String(lote.fechaVencimiento).slice(0, 10);
+
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Lima',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+
+  const obtener = (tipo: string) =>
+    partes.find(p => p.type === tipo)?.value ?? '';
+
+  const hoy = `${obtener('year')}-${obtener('month')}-${obtener('day')}`;
+
+  return fechaVencimiento < hoy;
+}
 }

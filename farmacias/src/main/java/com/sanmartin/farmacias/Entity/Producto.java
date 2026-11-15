@@ -20,6 +20,9 @@ public class Producto {
     @Column(name = "descripcion", length = 255)
     private String descripcion;
 
+    @Column(name = "PRESENTACION", length = 100)
+    private String presentacion;
+
     @ManyToOne
     @JoinColumn(name = "idCategoria", nullable = false)
     private Categoria categoria;
@@ -27,9 +30,6 @@ public class Producto {
     @ManyToOne
     @JoinColumn(name = "idLaboratorio")
     private Laboratorio laboratorio;
-
-    @Column(name = "precioCompra", precision = 10, scale = 2)
-    private BigDecimal precioCompra;
 
     @Column(name = "precioVenta", precision = 10, scale = 2)
     private BigDecimal precioVenta;
@@ -43,14 +43,14 @@ public class Producto {
     public Producto() {
     }
 
-    public Producto(Long idProducto, String nombreProducto, String codigo, String descripcion, Categoria categoria, Laboratorio laboratorio, BigDecimal precioCompra, BigDecimal precioVenta, Integer stockMinimo, EstadoGeneral estadoGeneral) {
+    public Producto(Long idProducto, String nombreProducto, String codigo, String descripcion, String presentacion, Categoria categoria, Laboratorio laboratorio, BigDecimal precioVenta, Integer stockMinimo, EstadoGeneral estadoGeneral) {
         this.idProducto = idProducto;
         this.nombreProducto = nombreProducto;
         this.codigo = codigo;
         this.descripcion = descripcion;
+        this.presentacion = presentacion;
         this.categoria = categoria;
         this.laboratorio = laboratorio;
-        this.precioCompra = precioCompra;
         this.precioVenta = precioVenta;
         this.stockMinimo = stockMinimo;
         this.estadoGeneral = estadoGeneral;
@@ -88,6 +88,14 @@ public class Producto {
         this.descripcion = descripcion;
     }
 
+    public String getPresentacion() {
+        return presentacion;
+    }
+
+    public void setPresentacion(String presentacion) {
+        this.presentacion = presentacion;
+    }
+
     public Categoria getCategoria() {
         return categoria;
     }
@@ -102,14 +110,6 @@ public class Producto {
 
     public void setLaboratorio(Laboratorio laboratorio) {
         this.laboratorio = laboratorio;
-    }
-
-    public BigDecimal getPrecioCompra() {
-        return precioCompra;
-    }
-
-    public void setPrecioCompra(BigDecimal precioCompra) {
-        this.precioCompra = precioCompra;
     }
 
     public BigDecimal getPrecioVenta() {

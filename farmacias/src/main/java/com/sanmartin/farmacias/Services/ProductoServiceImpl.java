@@ -2,10 +2,7 @@ package com.sanmartin.farmacias.Services;
 
 import com.sanmartin.farmacias.Dto.InventarioDto;
 import com.sanmartin.farmacias.Dto.ProductoDto;
-import com.sanmartin.farmacias.Entity.Categoria;
-import com.sanmartin.farmacias.Entity.EstadoGeneral;
-import com.sanmartin.farmacias.Entity.Laboratorio;
-import com.sanmartin.farmacias.Entity.Producto;
+import com.sanmartin.farmacias.Entity.*;
 import com.sanmartin.farmacias.Exception.DuplicateResourceException;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.CategoriaRepository;
@@ -14,6 +11,8 @@ import com.sanmartin.farmacias.Repository.ProductoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,8 +43,17 @@ public class ProductoServiceImpl implements IProductoServices{
     @Override
     @Transactional
     public ProductoDto registrarProducto(ProductoDto producto) {
-        if (productoRepository.existsByNombreProducto(producto.nombreProducto())){
-            throw new DuplicateResourceException("Ya existe un producto con el mismo nombre");
+        boolean duplicado = productoRepository.existeProductoDuplicado(
+                producto.nombreProducto(),
+                producto.idLaboratorio(),
+                producto.presentacion(),
+                -1L
+        );
+
+        if (duplicado) {
+            throw new DuplicateResourceException(
+                    "Ya existe un producto con el mismo nombre, laboratorio y presentación"
+            );
         }
 
         Categoria categoria= categoriaRepository.findById(producto.idCategoria()).
@@ -55,16 +63,26 @@ public class ProductoServiceImpl implements IProductoServices{
                 orElseThrow(() -> new ResourceNotFoundException("Laboratorio no encontrado"));
 
         Producto prod= new Producto();
-        prod.setCodigo(producto.codigo());
+
         prod.setNombreProducto(producto.nombreProducto());
         prod.setDescripcion(producto.descripcion());
+        prod.setPresentacion(producto.presentacion());
         prod.setCategoria(categoria);
         prod.setLaboratorio(laboratorio);
-        prod.setPrecioCompra(producto.precioCompra());
         prod.setPrecioVenta(producto.precioVenta());
         prod.setStockMinimo(producto.stockMinimo());
         prod.setEstadoGeneral(producto.estadoGeneral());
-        prod= productoRepository.save(prod);
+        // Primero guardamos el producto para obtener su ID
+        prod = productoRepository.saveAndFlush(prod);
+
+        // Generamos el código usando el ID asignado por Oracle
+        String codigoGenerado =
+                String.format("PROD-%06d", prod.getIdProducto());
+
+        prod.setCodigo(codigoGenerado);
+
+        // Persistimos el código generado
+        productoRepository.flush();
 
         return convertToDto(prod);
     }
@@ -73,6 +91,19 @@ public class ProductoServiceImpl implements IProductoServices{
     @Transactional
     public Optional<ProductoDto> actualizarProducto(Long id, ProductoDto producto) {
         return productoRepository.findById(id).map(prod -> {
+
+            boolean duplicado = productoRepository.existeProductoDuplicado(
+                    producto.nombreProducto(),
+                    producto.idLaboratorio(),
+                    producto.presentacion(),
+                    id
+            );
+
+            if (duplicado) {
+                throw new DuplicateResourceException(
+                        "Ya existe otro producto con el mismo nombre, laboratorio y presentación"
+                );
+            }
             Categoria categoria= categoriaRepository.findById(producto.idCategoria())
                     .orElseThrow(() -> new DuplicateResourceException("Categoria no encontrada"));
             Laboratorio laboratorio= laboratorioRepository.findById(producto.idLaboratorio())
@@ -81,8 +112,9 @@ public class ProductoServiceImpl implements IProductoServices{
             prod.setNombreProducto(producto.nombreProducto());
             prod.setDescripcion(producto.descripcion());
             prod.setCategoria(categoria);
+            prod.setPresentacion(producto.presentacion());
             prod.setLaboratorio(laboratorio);
-            prod.setPrecioCompra(producto.precioCompra());
+
             prod.setPrecioVenta(producto.precioVenta());
             prod.setStockMinimo(producto.stockMinimo());
             prod.setEstadoGeneral(producto.estadoGeneral());
@@ -102,8 +134,12 @@ public class ProductoServiceImpl implements IProductoServices{
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ProductoDto> buscarPorNombre(String nombre) {
-        return productoRepository.findBynombreProducto(nombre).map(this::convertToDto);
+    public List<ProductoDto> buscarPorNombre(String nombre) {
+        return productoRepository
+                .findByNombreProductoIgnoreCase(nombre.trim())
+                .stream()
+                .map(this::convertToDto)
+                .toList();
     }
 
     @Override
@@ -126,8 +162,15 @@ public class ProductoServiceImpl implements IProductoServices{
 
     @Override
     public List<InventarioDto> consultarInventario() {
-        return productoRepository.consultarInventario();
+        return productoRepository.consultarInventario(
+                EstadoGeneral.ACTIVO,
+                EstadoLote.ACTIVO,
+                LocalDate.now(ZoneId.of("America/Lima"))
+        );
     }
+
+    
+
 
     private ProductoDto convertToDto(Producto producto){
         return new ProductoDto(
@@ -135,9 +178,9 @@ public class ProductoServiceImpl implements IProductoServices{
                 producto.getCodigo(),
                 producto.getNombreProducto(),
                 producto.getDescripcion(),
+                producto.getPresentacion(),
                 producto.getCategoria().getIdCategoria(),
                 producto.getLaboratorio().getIdLaboratorio(),
-                producto.getPrecioCompra(),
                 producto.getPrecioVenta(),
                 producto.getStockMinimo(),
                 producto.getEstadoGeneral(),

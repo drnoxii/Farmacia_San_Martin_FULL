@@ -16,7 +16,7 @@ public interface IProductoServices {
     Optional<ProductoDto> actualizarProducto(Long id, ProductoDto producto);
     boolean eliminarProducto(Long id);
 
-    Optional<ProductoDto> buscarPorNombre(String nombre);
+    List<ProductoDto> buscarPorNombre(String nombre);
     List<ProductoDto> buscarPorCategoria(Long idCategoria);
     List<ProductoDto> buscarPorLaboratorio(Long idLaboratorio);
     List<ProductoDto> buscarPorEstadoGeneral(EstadoGeneral estadoGeneral);

@@ -20,15 +20,16 @@ public record ProductoDto(
         @Size(max = 255, message = "La descripción no debe pasar de los 255 caracteres")
         String descripcion,
 
+        @NotBlank(message = "La presentación es obligatoria")
+        @Size(max = 100, message = "La presentación no debe superar los 100 caracteres")
+        String presentacion,
+
         @NotNull(message = "La Categoria es obligatoria")
         Long idCategoria,
 
         @NotNull(message = "El Laboratorio es obligatorio")
         Long idLaboratorio,
 
-        @NotNull(message = "El precio de compra es obligatorio")
-        @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor que cero")
-        BigDecimal precioCompra,
 
         @NotNull(message = "El precio de venta es obligatorio")
         @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor que cero")

@@ -39,9 +39,12 @@ public class ProductoController {
 
     @GetMapping("/nombre/{nombre}")
     @Operation(summary = "Buscar productos por nombre")
-    public ResponseEntity<ProductoDto> buscarPorNombre(@PathVariable String nombre) {
-        return productoServices.buscarPorNombre(nombre).map(ResponseEntity::ok)
-                .orElseThrow(() -> new ResourceNotFoundException("NO se encontró el producto con nombre: " + nombre));
+    public ResponseEntity<List<ProductoDto>> buscarPorNombre(
+            @PathVariable String nombre) {
+
+        return ResponseEntity.ok(
+                productoServices.buscarPorNombre(nombre)
+        );
     }
 
     @GetMapping("/categoria/{idCategoria}")
