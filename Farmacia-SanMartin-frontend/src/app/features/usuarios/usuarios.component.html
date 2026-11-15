@@ -33,11 +33,6 @@
     </div>
 
     <div class="resumen-card">
-      <span>Administradores</span>
-      <strong>{{ totalAdministradores }}</strong>
-    </div>
-
-    <div class="resumen-card">
       <span>Cajeros</span>
       <strong>{{ totalCajeros }}</strong>
     </div>
@@ -67,15 +62,11 @@
         [(ngModel)]="busqueda"
         (ngModelChange)="filtrarUsuarios()">
 
-      <select
-        [(ngModel)]="filtroRol"
-        (ngModelChange)="filtrarUsuarios()">
-
-        <option value="">Todos los roles</option>
-        <option value="ADMIN">Administrador</option>
-        <option value="CAJERO">Cajero</option>
-
-      </select>
+      <input
+        type="text"
+        value="CAJERO"
+        readonly
+        class="filtro-rol">
 
       <select
         [(ngModel)]="filtroEstado"
@@ -167,14 +158,6 @@
 
                 {{ usuario.estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}
 
-              </button>
-
-              <!-- ELIMINAR -->
-              <button
-                type="button"
-                class="btn-eliminar"
-                (click)="eliminarUsuario(usuario)">
-                Eliminar
               </button>
 
             </td>
@@ -307,19 +290,14 @@
             required>
         </div>
 
-        <!-- ROL -->
+        <!-- ROL AUTOMATICO DENTRO DE AGREGAR NUEVO USUARIO-->
         <div class="campo">
           <label>Rol *</label>
 
-          <select
-            name="rol"
-            [(ngModel)]="nuevoUsuario.rol"
-            required>
-
-            <option value="ADMIN">Administrador</option>
-            <option value="CAJERO">Cajero</option>
-
-          </select>
+          <input
+            type="text"
+            value="CAJERO"
+            disabled>
         </div>
 
       </div>
@@ -447,19 +425,15 @@
             maxlength="250">
         </div>
 
-        <!-- ROL -->
+        <!-- ROL AUTOMATICO EN EDITAR-->
         <div class="campo campo-completo">
           <label>Rol del usuario *</label>
 
-          <select
+          <input
+            type="text"
             name="rolEdicion"
-            [(ngModel)]="usuarioEdicion.rol"
-            required>
-
-            <option value="ADMIN">Administrador</option>
-            <option value="CAJERO">Cajero</option>
-
-          </select>
+            value="CAJERO"
+            disabled>
         </div>
 
       </div>

@@ -96,7 +96,7 @@ export class UsuariosComponent implements OnInit {
   // =====================================
 
   busqueda = '';
-  filtroRol = '';
+  filtroRol = 'CAJERO';
   filtroEstado = '';
 
   // =====================================
@@ -327,7 +327,7 @@ export class UsuariosComponent implements OnInit {
   limpiarFiltros(): void {
 
     this.busqueda = '';
-    this.filtroRol = '';
+    this.filtroRol = 'CAJERO';
     this.filtroEstado = '';
 
     this.filtrarUsuarios();
@@ -382,7 +382,7 @@ export class UsuariosComponent implements OnInit {
       direccion: usuario.direccion || '',
 
       correo: usuario.correo || '',
-      rol: usuario.rol,
+      rol: 'CAJERO',
       estado: usuario.estado || usuario.estadoGeneral || 'ACTIVO'
     };
 
