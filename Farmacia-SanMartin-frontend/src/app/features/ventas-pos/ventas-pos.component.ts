@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AlertService } from '../../core/services/alert.service';
 import { VentaService } from '../../core/services/venta.service';
 import { LoteService } from '../../core/services/lote.service';
@@ -14,6 +14,7 @@ import { Producto } from '../../core/interfaces/producto.interface';
 import { VentaResponse } from '../../core/interfaces/venta-response.interface';
 import { Lote } from '../../core/interfaces/lote.interface';
 import { Cliente } from '../../core/interfaces/cliente.interface';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-ventas-pos',
@@ -31,6 +32,7 @@ export class VentasPosComponent implements OnInit {
   private cajaService = inject(CajaService);
   private clienteService = inject(ClienteService);
   cartService = inject(CartService);
+  private router = inject(Router);
 
   // ---------- Caja ----------
   idCaja: number | null = null;
@@ -65,16 +67,74 @@ export class VentasPosComponent implements OnInit {
   // Obtiene la caja ABIERTA del usuario logueado
   cargarCaja(): void {
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+    // Bloquea la pantalla mientras verificamos la caja
+    Swal.fire({
+      title: 'Verificando caja...',
+      text: 'Comprobando el estado de tu caja.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading()
+    });
+
     this.cajaService.cajaAbierta(usuario.idUsuario).subscribe({
-      next: caja => {
+      next: (caja) => {
         this.idCaja = caja ? caja.idCaja : null;
         this.cajaAbierta = !!caja;
+
+        if (this.cajaAbierta) {
+          // Caja abierta: permitir utilizar el POS
+          Swal.close();
+        } else {
+          // Caja cerrada: bloquear el POS
+          this.mostrarAlertaCajaCerrada();
+        }
       },
-      error: () => {
+
+      error: async (err) => {
+        console.error('Error al verificar caja:', err);
+
         this.idCaja = null;
         this.cajaAbierta = false;
+
+        // Un error de conexión no significa que la caja esté cerrada
+        const resultado = await Swal.fire({
+          icon: 'error',
+          title: 'No se pudo verificar la caja',
+          text: 'No podemos habilitar las ventas sin comprobar el estado de la caja.',
+          width: '650px',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          showCancelButton: false,
+          confirmButtonText: 'Ir a Gestión de Caja',
+          confirmButtonColor: '#003A6C'
+        });
+
+        if (resultado.isConfirmed) {
+          await this.router.navigate(['/caja']);
+        }
       }
     });
+  }
+
+  async mostrarAlertaCajaCerrada(): Promise<void> {
+
+    const resultado = await
+
+      Swal.fire({
+        title: '¡CAJA CERRADA!',
+        text: 'Debes abrir una caja antes de utilizar el Punto de Venta.',
+        icon: 'warning',
+        confirmButtonText: 'Ir a Gestión de Caja',
+        confirmButtonColor: '#00897B',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+
+    if (resultado.isConfirmed) {
+      await this.router.navigate(['/caja']);
+    }
   }
 
   // ========== CLIENTE ==========
