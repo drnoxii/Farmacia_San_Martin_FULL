@@ -1,3 +1,12 @@
+export interface ItemCompra {
+  idProducto: number;
+  nombreProducto: string;
+  lote: string;
+  fechaVencimiento: string;
+  cantidad: number;
+  precioCompra: number;
+}
+
 export type EstadoCompra = 'PENDIENTE' | 'RECIBIDA' | 'ANULADA';
 
 export interface DetalleCompra {

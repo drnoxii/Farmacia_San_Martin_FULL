@@ -72,7 +72,7 @@ public class CompraServiceImpl implements ICompraService{
         compra.setUsuario(usuario);
         compra.setFechaCompra(LocalDateTime.now());
         compra.setTotalCompra(total);
-        compra.setEstado(EstadoCompra.RECIBIDA);
+        compra.setEstado(EstadoCompra.PENDIENTE);
         compra = compraRepository.save(compra);
 
         // 5. Por cada detalle: crear DetalleCompra + Lote

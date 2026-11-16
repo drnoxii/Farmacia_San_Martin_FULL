@@ -39,3 +39,5 @@ export class ComprasService {
     return this.http.post<Compra>(this.apiUrl, compra);
   }
 }
+
+export { ComprasService as CompraService };

@@ -1,233 +1,256 @@
-<div class="container-fluid py-4">
-    <!-- Cabecera -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark m-0">
-            <i class="bi bi-cart-check me-2"></i>Historial de Compras
-        </h2>
-        <div class="d-flex gap-2">
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
-                <i class="bi bi-plus-circle me-1"></i> Nuevo Proveedor
-            </button>
-            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaCompra">
-                <i class="bi bi-plus-circle me-1"></i> Nueva Compra
-            </button>
+<div class="container-fluid py-3">
+
+    <div class="row g-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark m-0"><i class="bi bi-box"></i> Compras y Proveedores</h2>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#comprasModal" (click)="cargarCompras()"><i
+                    class="bi bi-eye"></i> Ver Compras</button>
         </div>
-    </div>
 
-    <!-- Buscador -->
-    <div class="input-group input-group-sm mb-3 p-2">
-        <select class="form-select" style="max-width: 140px" [(ngModel)]="tipoBusqueda">
-            <option value="proveedor">PROVEEDOR</option>
-            <option value="producto">PRODUCTO</option>
-        </select>
-        <input type="text" class="form-control" [(ngModel)]="terminoBusqueda" [placeholder]="tipoBusqueda === 'producto' ? 'Ej: Paracetamol, Ibuprofeno...' : 'Ej: Farma SAC, Distribuidora...'" (keyup.enter)="buscarCompras()">
-        <button class="btn btn-outline-primary" type="button" (click)="buscarCompras()" title="Buscar">
-            <i class="bi bi-search"></i>
-        </button>
-        <button class="btn btn-outline-secondary" (click)="limpiarBusqueda()" title="Restaurar lista">
-          <i class="bi bi-arrow-clockwise"></i>
-        </button>
-    </div>
+        <!-- ========================================== -->
+        <!-- COLUMNA IZQUIERDA: PRODUCTO, LOTE Y PRECIO -->
+        <!-- ========================================== -->
+        <div class="col-md-7">
+            <!-- Buscador de productos (visible si no hay producto seleccionado) -->
+            <div class="card shadow-sm border-0 mb-3" *ngIf="!productoSeleccionado">
+                <div class="card-body">
+                    <label class="fw-bold mb-2"><i class="bi bi-search me-2"></i>Buscar Producto</label>
+                    <input type="text" class="form-control form-control-lg" placeholder="Escribe el nombre o código..."
+                        [(ngModel)]="busqueda">
 
-    <!-- Tabla de Compras -->
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-body p-0">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-muted">
-                    <tr>
-                        <th class="text-center" style="width: 50px;">N°</th>
-                        <th>Producto</th>
-                        <th>Proveedor</th>
-                        <th>Usuario</th>
-                        <th>Fecha</th>
-                        <th class="text-end">Total</th>
-                        <th class="text-center">Estado</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (c of comprasFiltradas; track c.idCompra; let i = $index) {
-                    <tr>
-                        <td class="text-center fw-semibold text-secondary">{{ i + 1 }}</td>
-                        <td>
-                            @for (d of (c.detalleCompra || c.detalles); track $index) {
-                            <div class="small fw-semibold">{{d.nombreProducto}}</div>
-                            }
-                        </td>
-                        <td>{{c.razonSocialProveedor}}</td>
-                        <td>{{c.nombreUsuario}}</td>
-                        <td>{{c.fechaCompra| date: 'dd/MM/yyyy'}}</td>
-                        <td class="text-end">{{c.totalCompra| currency: 'PEN'}}</td>
-                        <td class="text-center">
-                            <span class="badge rounded-pill" [ngClass]="{
-                            'bg-success': c.estado === 'RECIBIDA',
-                            'bg-warning': c.estado === 'PENDIENTE',
-                            'bg-danger': c.estado === 'ANULADA'
-                        }">{{ c.estado }}</span>
-                        </td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
-                                data-bs-target="#modalDetalleCompra" (click)="verDetalles(c, i)">
-                                <i class="bi bi-receipt"></i> Ver
-                            </button>
-                            <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalCambiarEstado"
-                            (click)="verEstado(c)">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    } @empty {
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
-                            No se encontraron compras con el criterio de búsqueda.
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Detalle de Compra -->
-<div class="modal fade" id="modalDetalleCompra" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-
-            <div class="modal-header bg-sanmartin-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-receipt me-2"></i>Detalle de Compra N° {{ numeroCompraSeleccionada }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body p-0">
-                <!-- Resumen de la compra -->
-                <div class="p-3 bg-light border-bottom d-flex justify-content-between flex-wrap gap-2">
-                    <div>
-                        <span class="text-muted small d-block">Proveedor</span>
-                        <strong>{{ compraSeleccionada?.razonSocialProveedor || ('ID: ' +
-                            compraSeleccionada?.idProveedor) }}</strong>
+                    <!-- Resultados de búsqueda -->
+                    <div class="list-group mt-2" *ngIf="busqueda && productosFiltrados.length > 0">
+                        <button *ngFor="let p of productosFiltrados" type="button"
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                            (click)="seleccionarProducto(p)">
+                            <div>
+                                <strong>{{ p.nombreProducto }}</strong> <br>
+                                <small class="text-muted">
+                                    {{ p.codigo ? (p.codigo + ' | ') : '' }}Categoría: {{ p.nombreCategoria || 'General'
+                                    }}
+                                </small>
+                            </div>
+                            <span class="badge bg-secondary">Venta: S/ {{ p.precioVenta }}</span>
+                        </button>
                     </div>
-                    <div>
-                        <span class="text-muted small d-block">Usuario que registró</span>
-                        <strong>{{ compraSeleccionada?.nombreUsuario || ('ID: ' + compraSeleccionada?.idUsuario)
-                            }}</strong>
-                    </div>
-                    <div>
-                        <span class="text-muted small d-block">Fecha</span>
-                        <strong>{{ compraSeleccionada?.fechaCompra | date:'dd/MM/yyyy HH:mm' }}</strong>
-                    </div>
-                    <div>
-                        <span class="text-muted small d-block">Total</span>
-                        <strong class="text-success fs-5">{{ compraSeleccionada?.totalCompra | currency:'USD'
-                            }}</strong>
+
+                    <div *ngIf="busqueda && productosFiltrados.length === 0" class="text-muted small mt-2">
+                        No se encontraron productos que coincidan con "{{ busqueda }}".
                     </div>
                 </div>
-
-                <!-- Tabla de ítems/productos del detalle -->
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-muted">
-                        <tr>
-                            <th class="ps-4">Producto</th>
-                            <th class="text-center">N° Lote</th>
-                            <th class="text-center">Vencimiento</th>
-                            <th class="text-center">Cantidad</th>
-                            <th class="text-end">P. Costo</th>
-                            <th class="text-end pe-4">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (d of (compraSeleccionada?.detalles || compraSeleccionada?.detalleCompra); track $index) {
-                        <tr>
-                            <td class="ps-4 fw-bold text-dark">{{ d.nombreProducto }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-secondary">{{ d.numeroLote || '-' }}</span>
-                            </td>
-                            <td class="text-center">{{ d.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
-                            <td class="text-center">{{ d.cantidad }}</td>
-                            <td class="text-end">{{ d.precioCosto | currency:'PEN' }}</td>
-                            <td class="text-end pe-4 fw-bold">{{ d.subtotal | currency:'PEN' }}</td>
-                        </tr>
-                        } @empty {
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                No hay productos registrados en el detalle de esta compra.
-                            </td>
-                        </tr>
-                        }
-                    </tbody>
-                </table>
             </div>
 
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
+            <!-- Datos de la compra del producto seleccionado -->
+            <div class="card shadow-sm border-0 border-start border-4 border-success" *ngIf="productoSeleccionado">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-success m-0">
+                            <i class="bi bi-capsule me-1"></i> Agregando: {{ productoSeleccionado.nombreProducto }}
+                        </h5>
+                        <button class="btn btn-sm btn-outline-danger" (click)="cancelarSeleccion()"
+                            title="Cancelar selección">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
 
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Lote</label>
+                            <input type="text" class="form-control" placeholder="Ingrese el lote de los productos"
+                                [(ngModel)]="lote">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control" [(ngModel)]="fechaVencimiento">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Cantidad</label>
+                            <input type="number" class="form-control" [(ngModel)]="cantidad" min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Precio de compra (S/)</label>
+                            <input type="number" class="form-control" min="0" step="0.01" [(ngModel)]="precioCompra">
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center bg-light border rounded p-2">
+                                <span class="fw-bold">Subtotal</span>
+                                <span class="fw-bold text-success">S/ {{ (cantidad * precioCompra) | number:'1.2-2'
+                                    }}</span>
+                            </div>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button class="btn btn-success w-100" (click)="agregarALista()">
+                                <i class="bi bi-plus-circle me-1"></i> Agregar a la compra
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- COLUMNA DERECHA: DETALLE Y REGISTRO        -->
+        <!-- ========================================== -->
+        <div class="col-md-5">
+            <div class="card shadow border-0 h-100">
+                <div class="card-header bg-sanmartin-primary text-white py-3">
+                    <h5 class="m-0"><i class="bi bi-box-seam me-2"></i>Detalle de Compra</h5>
+                </div>
+
+                <div class="card-body p-0 d-flex flex-column">
+                    <!-- Proveedor y usuario -->
+                    <div class="border-bottom bg-light p-3 d-flex flex-column align-items-center">
+                        <label class="fw-bold small mb-2 w-100">
+                            <i class="bi bi-truck me-1"></i> Proveedor
+                        </label>
+                        <div class="input-group input-group-sm w-100">
+                            <select class="form-select form-select-sm" [(ngModel)]="proveedorSeleccionado">
+                                <option [ngValue]="null" disabled selected>Seleccione un proveedor</option>
+                                <option *ngFor="let prov of proveedores" [ngValue]="prov">
+                                    {{ prov.razonSocial }}
+                                </option>
+                            </select>
+                            <button class="btn btn-outline-success" title="Nuevo proveedor" data-bs-toggle="modal"
+                                data-bs-target="#proveedorModal">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted mt-2">
+                            <i class="bi bi-person me-1"></i>Registrado por: <strong>{{ nombreUsuario || 'Usuario'
+                                }}</strong>
+                        </small>
+                    </div>
+
+                    <!-- Tabla de la compra -->
+                    <div class="table-responsive flex-grow-1" style="max-height: 350px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Producto</th>
+                                    <th>Cant.</th>
+                                    <th>Precio</th>
+                                    <th>Sub.</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngIf="items.length === 0">
+                                    <td colspan="5" class="text-center py-4 text-muted">Sin productos agregados</td>
+                                </tr>
+                                <tr *ngFor="let item of items; let i = index">
+                                    <td class="ps-3">
+                                        <strong>{{ item.nombreProducto }}</strong><br>
+                                        <small class="text-muted">Lote: {{ item.lote }} | Vence: {{
+                                            item.fechaVencimiento }}</small>
+                                    </td>
+                                    <td>{{ item.cantidad }}</td>
+                                    <td>S/ {{ item.precioCompra | number:'1.2-2' }}</td>
+                                    <td class="fw-bold">S/ {{ (item.cantidad * item.precioCompra) | number:'1.2-2' }}
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button class="btn btn-sm btn-outline-danger" (click)="eliminarItem(i)"
+                                            title="Eliminar producto">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Total y registro -->
+                    <div class="p-3 border-top bg-light mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="m-0 text-muted">Total:</h4>
+                            <h2 class="m-0 fw-bold text-success">S/ {{ total | number:'1.2-2' }}</h2>
+                        </div>
+
+                        <button class="btn btn-success btn-lg w-100 fw-bold" (click)="guardarCompra()"
+                            [disabled]="guardando || items.length === 0 || !proveedorSeleccionado">
+                            <span *ngIf="guardando" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <i *ngIf="!guardando" class="bi bi-check-circle me-2"></i> Registrar Compra
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Nueva Compra -->
-<div class="modal fade" id="modalNuevaCompra" tabindex="-1" aria-labelledby="modalNuevaCompraLabel" aria-hidden="true">
+<!--Modal Registrar Proveedor-->
+<div class="modal fade" id="proveedorModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-sanmartin-primary text-white">
-                <h1 class="modal-title fs-5" id="modalNuevaCompraLabel">Nueva Compra</h1>
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">
+                    <h5 class="m-0"><i class="bi bi-building-add me-2"></i>
+                        Registrar Nuevo Proveedor</h5>
+                </h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form [formGroup]="formCompra" (ngSubmit)="guardarCompra()">
+                <form [formGroup]="formProveedor" (ngSubmit)="guardarProveedor()">
+
+                    <!-- Razón Social -->
                     <div class="mb-3">
-                        <label for="productos" class="form-label">Productos</label>
-                        <select class="form-select" id="productos" formControlName="productos">
-                            <option value="" selected disabled>Seleccione un producto</option>
-                            <option *ngFor="let prod of productos" [value]="prod.idProducto">{{ prod.nombreProducto }}
-                            </option>
-                        </select>
+                        <label class="form-label fw-bold">
+                            Razón Social <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" placeholder="Ej: Distribuidora Farma SAC"
+                            formControlName="razonSocial" maxlength="150" required>
                     </div>
+
+                    <!-- RUC -->
                     <div class="mb-3">
-                        <label for="proveedor" class="form-label">Proveedor</label>
-                        <select class="form-select" id="proveedor" formControlName="proveedor">
-                            <option value="" selected disabled>Seleccione un proveedor</option>
-                            <option *ngFor="let prov of proveedor" [value]="prov.idProveedor">{{ prov.razonSocial }}
-                            </option>
-                        </select>
+                        <label class="form-label fw-bold">
+                            RUC <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" placeholder="Ej: 20123456789" formControlName="ruc"
+                            maxlength="11" required>
                     </div>
+
+                    <!-- Teléfono y Correo -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" class="form-control" placeholder="Ej: 999888777" formControlName="telefono"
+                                    maxlength="15">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Correo Electrónico</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" placeholder="Ej: ventas@farma.com"
+                                    formControlName="correo" maxlength="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dirección -->
                     <div class="mb-3">
-                        <label for="usuario" class="form-label">Usuario</label>
-                        <input type="number" class="form-control" id="usuario" formControlName="usuario"
-                            placeholder="Ingrese el ID del usuario">
+                        <label class="form-label fw-bold">Dirección</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                            <input type="text" class="form-control" placeholder="Ej: Av. Lima 456, San Isidro"
+                                formControlName="direccion" maxlength="250">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="cantidad" class="form-label">Cantidad</label>
-                        <input type="number" class="form-control" id="cantidad" formControlName="cantidad"
-                            (input)="calcularTotal()" placeholder="Ingrese la cantidad de productos">
+
+                    <div class="alert alert-success py-2 mb-0" role="status">
+                        <i class="bi bi-check-circle me-1"></i>
+                        El proveedor se registrará con estado <strong>Activo</strong>.
                     </div>
-                    <div class="mb-3">
-                        <label for="precio" class="form-label">Precio</label>
-                        <input type="number" class="form-control" id="precio" formControlName="precio"
-                            (input)="calcularTotal()" placeholder="Ingrese el precio de los productos">
-                    </div>
-                    <div class="mb-3">
-                        <label for="lote" class="form-label">Lote</label>
-                        <input type="text" class="form-control" id="lote" formControlName="lote"
-                            placeholder="Ingrese el lote de los productos">
-                    </div>
-                    <div class="mb-3">
-                        <label for="vencimiento" class="form-label">Fecha de Vencimiento</label>
-                        <input type="date" class="form-control" id="vencimiento" formControlName="vencimiento"
-                            placeholder="Ingrese la fecha de vencimiento de los productos">
-                    </div>
-                    <div class="mb-3">
-                        <label for="total" class="form-label">Total</label>
-                        <input type="number" class="form-control" id="total" formControlName="total"
-                            placeholder="Total de la compra" readonly>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Crear Compra</button>
+
+                    <!-- Botones -->
+                    <div class="modal-footer d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+                                class="bi bi-x-circle me-1"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Registrar
+                            Proveedor</button>
                     </div>
                 </form>
             </div>
@@ -235,146 +258,276 @@
     </div>
 </div>
 
-<!-- Modal de Nuevo Proveedor -->
-<div class="modal fade" id="modalNuevoProveedor" tabindex="-1" aria-labelledby="modalNuevoProveedorLabel"
-    aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<!--Modal de Compras-->
+<div class="modal fade" id="comprasModal" tabindex="-1" aria-labelledby="comprasModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-sanmartin-primary text-white">
-                <h1 class="modal-title fs-5" id="modalNuevoProveedorLabel">Nuevo Proveedor</h1>
-                <button type="button" class="btn-close" id="closeModalButton" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel"><i class="bi bi-cart3 me-2"></i> Historial de
+                    Compras</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form [formGroup]="formProveedor" (ngSubmit)="guardarProveedor()">
-                    <div class="mb-3">
-                        <label for="razonSocial" class="form-label">Razón Social</label>
-                        <input type="text" class="form-control" id="razonSocial" formControlName="razonSocial">
-                    </div>
-                    <div class="mb-3">
-                        <label for="telefono" class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" id="telefono" formControlName="telefono" maxlength="9"
-                            pattern="[0-9]{9}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="ruc" class="form-label">RUC</label>
-                        <input type="text" class="form-control" id="ruc" formControlName="ruc" maxlength="11"
-                            pattern="[0-9]{11}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="correo" class="form-label">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="correo" formControlName="correo">
-                    </div>
-                    <div class="mb-3">
-                        <label for="direccion" class="form-label">Dirección</label>
-                        <input type="text" class="form-control" id="direccion" formControlName="direccion">
-                    </div>
-                    <div class="mb-3">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select" id="estado" formControlName="estado">
-                            <option value="" disabled selected>Seleccione un estado</option>
-                            <option value="ACTIVO">Activo</option>
-                            <option value="INACTIVO">Inactivo</option>
+                <!-- Filtro de búsqueda -->
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="input-group input-group-sm">
+                        <select class="form-select" style="max-width: 140px;" [(ngModel)]="tipoBusqueda" (change)="filtrarCompras()">
+                            <option value="proveedor">PROVEEDOR</option>
+                            <option value="producto">PRODUCTO</option>
                         </select>
+                        <input type="text" class="form-control border-start-0"
+                            [(ngModel)]="terminoBusqueda"
+                            (input)="filtrarCompras()"
+                            (keyup.enter)="filtrarCompras()"
+                            [placeholder]="tipoBusqueda === 'proveedor' ? 'Ej: Farma SAC, Distribuidora...' : 'Ej: Paracetamol, Ibuprofeno...'">
+                        <button class="btn btn-outline-secondary" type="button" (click)="filtrarCompras()" title="Buscar">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" (click)="resetearBusquedaCompras()" title="Resetear">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Crear Proveedor</button>
-                    </div>
-                </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>N°</th>
+                                <th>Producto</th>
+                                <th>Proveedor</th>
+                                <th>Usuario</th>
+                                <th>Fecha</th>
+                                <th class="text-end">Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Sin compras -->
+                            <tr *ngIf="comprasFiltradas.length === 0">
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox me-2"></i>
+                                    {{ compras.length === 0 ? 'No hay compras registradas.' : 'No se encontraron compras que coincidan con la búsqueda.' }}
+                                </td>
+                            </tr>
+
+                            <!-- Filas de compras -->
+                            <tr *ngFor="let compra of comprasFiltradas; let i = index">
+                                <td>{{ i + 1 }}</td>
+                                <td>
+                                    <span *ngIf="tieneProductos(compra)">
+                                        {{ getNombrePrimerProducto(compra) }}
+                                        <span *ngIf="getCantidadProductosExtra(compra) > 0" class="badge bg-secondary ms-1">
+                                            +{{ getCantidadProductosExtra(compra) }}
+                                        </span>
+                                    </span>
+                                    <span *ngIf="!tieneProductos(compra)" class="text-muted">—</span>
+                                </td>
+                                <td>{{ compra.razonSocialProveedor || '—' }}</td>
+                                <td>{{ compra.nombreUsuario || '—' }}</td>
+                                <td>{{ compra.fechaCompra | date:'dd/MM/yyyy' }}</td>
+                                <td class="text-end fw-bold">PEN{{ compra.totalCompra | number:'1.2-2' }}</td>
+                                <td>
+                                    <span class="badge"
+                                        [ngClass]="{
+                                            'bg-success':  compra.estado === 'RECIBIDA',
+                                            'bg-warning text-dark': compra.estado === 'PENDIENTE',
+                                            'bg-danger':   compra.estado === 'ANULADA'
+                                        }">
+                                        {{ compra.estado }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-success me-1" (click)="verDetalles(compra, i)" title="Ver detalle">
+                                        <i class="bi bi-eye me-1"></i>Ver
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" (click)="verEstado(compra)" title="Editar estado">
+                                        <i class="bi bi-pencil me-1"></i>Editar
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Cambiar Estado de Compra -->
-<div class="modal fade" id="modalCambiarEstado" tabindex="-1" aria-labelledby="modalCambiarEstadoLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Modal de Ver Detalles de Compra-->
+<div class="modal fade" id="detalleCompraModal" tabindex="-1" aria-labelledby="detalleCompraModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      
-      <!-- Header -->
-      <div class="modal-header text-white">
-        <h5 class="modal-title" id="modalCambiarEstadoLabel">
-          <i class="bi bi-arrow-repeat me-2"></i>Actualizar Estado de Compra
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="detalleCompraModalLabel">
+          Detalles de Compra: {{ compraSeleccionada ? getNombrePrimerProducto(compraSeleccionada) : '' }}
+        </h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-
-      <!-- Formulario -->
-      <form (ngSubmit)="actualizarEstado()">
-        <div class="modal-body">
-          <!-- Resumen de la compra seleccionada -->
-          <div class="p-3 mb-3 rounded-3" style="background-color: var(--color-fondo-claro, #f8fbf9); border: 1px dashed var(--color-borde);">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small">Producto:</span>
-                @for (d of (compraSeleccionada?.detalles || compraSeleccionada?.detalleCompra); track $index) {
-                    <strong class="text-dark">{{d.nombreProducto}}</strong>
-                }
+      <div class="modal-body" *ngIf="compraSeleccionada as compra; else sinCompraSeleccionada">
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="border rounded p-3 h-100 bg-light">
+              <small class="text-muted d-block">Proveedor</small>
+              <strong>{{ compra.razonSocialProveedor || '—' }}</strong>
+              <small class="text-muted d-block mt-2">Usuario que registró</small>
+              <span>{{ compra.nombreUsuario || '—' }}</span>
             </div>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="text-muted small">Proveedor:</span>
-              <span class="fw-semibold text-dark">{{ compraSeleccionada?.razonSocialProveedor }}</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="text-muted small">Total:</span>
-              <span class="fw-bold" style="color: var(--color-primario-oscuro);">
-                {{ compraSeleccionada?.totalCompra | currency:'PEN':'symbol':'1.2-2' }}
-              </span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="text-muted small">Estado actual:</span>
-              <span class="badge" [ngClass]="{
-                'bg-warning text-dark': compraSeleccionada?.estado === 'PENDIENTE',
-                'bg-success': compraSeleccionada?.estado === 'RECIBIDA',
-                'bg-danger': compraSeleccionada?.estado === 'ANULADA'
-              }">
-                {{ compraSeleccionada?.estado }}
+          </div>
+          <div class="col-md-4">
+            <div class="border rounded p-3 h-100 bg-light">
+              <small class="text-muted d-block">Fecha de compra</small>
+              <strong>{{ compra.fechaCompra | date:'dd/MM/yyyy HH:mm' }}</strong>
+              <small class="text-muted d-block mt-2">Estado de compra</small>
+              <span class="badge"
+                [ngClass]="{
+                  'bg-success': compra.estado === 'RECIBIDA',
+                  'bg-warning text-dark': compra.estado === 'PENDIENTE',
+                  'bg-danger': compra.estado === 'ANULADA'
+                }">
+                {{ compra.estado || '—' }}
               </span>
             </div>
           </div>
-
-          <!-- Selector de nuevo estado -->
-          <div class="mb-3">
-            <label for="nuevoEstado" class="form-label">
-              <i class="bi bi-tag me-1"></i>Nuevo Estado <span class="text-danger">*</span>
-            </label>
-            <select id="nuevoEstado" name="nuevoEstado" class="form-select" [(ngModel)]="nuevoEstadoSeleccionado"
-              required>
-              <option [ngValue]="null" disabled>Seleccione el nuevo estado</option>
-              <option value="PENDIENTE" [disabled]="compraSeleccionada?.estado === 'PENDIENTE'">
-                🕒 Pendiente
-              </option>
-              <option value="RECIBIDA" [disabled]="compraSeleccionada?.estado === 'RECIBIDA'">
-                ✅ Recibida (Ingresa stock)
-              </option>
-              <option value="ANULADA" [disabled]="compraSeleccionada?.estado === 'ANULADA'">
-                ❌ Anulada
-              </option>
-            </select>
-          </div>
-
-          <!-- Alerta informativa según el estado seleccionado -->
-          <div *ngIf="nuevoEstadoSeleccionado === 'RECIBIDA'" class="alert alert-success d-flex align-items-center py-2 px-3 small rounded-3" role="alert">
-            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
-            <div>Al marcar como <strong>RECIBIDA</strong>, los lotes y productos se registrarán en el inventario activo.</div>
-          </div>
-
-          <div *ngIf="nuevoEstadoSeleccionado === 'ANULADA'" class="alert alert-danger d-flex align-items-center py-2 px-3 small rounded-3" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div>Esta acción marcará la compra como anulada. Confirme si está seguro.</div>
+          <div class="col-md-4">
+            <div class="border rounded p-3 h-100 bg-light">
+              <small class="text-muted d-block mt-2">Total de la compra</small>
+              <strong class="fs-5 text-success">S/ {{ compra.totalCompra | number:'1.2-2' }}</strong>
+            </div>
           </div>
         </div>
 
-        <!-- Footer con botones de acción -->
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Cancelar
-          </button>
-          <button type="submit" class="btn btn-primary" [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === compraSeleccionada?.estado || cargando">
-            <span *ngIf="cargando" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            <i *ngIf="!cargando" class="bi bi-check-lg me-1" ></i>Guardar Cambios
-          </button>
+        <h6 class="fw-bold mb-3"><i class="bi bi-box-seam me-2"></i>Productos registrados</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Producto</th>
+                <th>Lote</th>
+                <th>Vencimiento</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-end">Precio compra</th>
+                <th class="text-end">Subtotal</th>
+                <th>Estado lote</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let detalle of compra.detalles || compra.detalleCompra || []">
+                <td class="fw-semibold">{{ detalle.nombreProducto || '—' }}</td>
+                <td>{{ detalle.numeroLote || '—' }}</td>
+                <td>{{ detalle.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="text-center">{{ detalle.cantidad }}</td>
+                <td class="text-end">S/ {{ detalle.precioCosto | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold">S/ {{ detalle.subtotal | number:'1.2-2' }}</td>
+                <td>
+                  <span class="badge"
+                    [ngClass]="{
+                      'bg-success': detalle.estadoLote === 'ACTIVO',
+                      'bg-warning text-dark': detalle.estadoLote === 'AGOTADO',
+                      'bg-danger': detalle.estadoLote === 'VENCIDO'
+                    }">
+                    {{ detalle.estadoLote || '—' }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="(compra.detalles || compra.detalleCompra || []).length === 0">
+                <td colspan="7" class="text-center text-muted py-4">No hay productos registrados en esta compra.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </form>
+      </div>
+      <ng-template #sinCompraSeleccionada>
+        <div class="modal-body text-center text-muted py-4">No se encontró información de la compra.</div>
+      </ng-template>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Cambiar Estado -->
+<div class="modal fade" id="estadoModal" tabindex="-1" aria-labelledby="estadoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="estadoModalLabel">
+          Cambiar estado: {{ compraSeleccionada ? getNombrePrimerProducto(compraSeleccionada) : '' }}
+        </h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" *ngIf="compraSeleccionada as compra; else sinCompraParaEstado">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="border rounded p-3 h-100 bg-light">
+              <small class="text-muted d-block">Proveedor</small>
+              <strong>{{ compra.razonSocialProveedor || '—' }}</strong>
+              <small class="text-muted d-block mt-2">Usuario que registró</small>
+              <span>{{ compra.nombreUsuario || '—' }}</span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="border rounded p-3 h-100 bg-light">
+              <small class="text-muted d-block">Fecha de compra</small>
+              <strong>{{ compra.fechaCompra | date:'dd/MM/yyyy HH:mm' }}</strong>
+              <small class="text-muted d-block mt-2">Total de la compra</small>
+              <strong class="text-success">S/ {{ compra.totalCompra | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="fw-bold mb-2">Productos de la compra</h6>
+        <div class="table-responsive mb-4">
+          <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Producto</th>
+                <th>Lote</th>
+                <th>Vencimiento</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-end">Precio</th>
+                <th class="text-end">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let detalle of compra.detalles || compra.detalleCompra || []">
+                <td class="fw-semibold">{{ detalle.nombreProducto || '—' }}</td>
+                <td>{{ detalle.numeroLote || '—' }}</td>
+                <td>{{ detalle.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                <td class="text-center">{{ detalle.cantidad }}</td>
+                <td class="text-end">S/ {{ detalle.precioCosto | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold">S/ {{ detalle.subtotal | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-2">
+          <label for="nuevoEstadoCompra" class="form-label fw-bold">Nuevo estado</label>
+          <select id="nuevoEstadoCompra" class="form-select" [(ngModel)]="nuevoEstadoSeleccionado">
+            <option value="PENDIENTE">PENDIENTE</option>
+            <option value="RECIBIDA">RECIBIDA</option>
+            <option value="ANULADA">ANULADA</option>
+          </select>
+          <small class="text-muted">Estado actual: <strong>{{ compra.estado || '—' }}</strong></small>
+        </div>
+      </div>
+      <ng-template #sinCompraParaEstado>
+        <div class="modal-body text-center text-muted py-4">No se encontró información de la compra.</div>
+      </ng-template>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="actualizarEstado()"
+          [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === compraSeleccionada?.estado || cargando">
+          <span *ngIf="cargando" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i *ngIf="!cargando" class="bi bi-check-circle me-1"></i>Cambiar
+        </button>
+      </div>
     </div>
   </div>
 </div>

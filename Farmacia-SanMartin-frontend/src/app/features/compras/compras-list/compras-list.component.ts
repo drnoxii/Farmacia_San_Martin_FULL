@@ -1,14 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ComprasService } from '../../../core/services/compras.service';
 import { AlertService } from '../../../core/services/alert.service';
-import { Compra, EstadoCompra } from '../../../core/interfaces/compras.interface';
 import { ProveedorService } from '../../../core/services/proveedor.service';
-import { Proveedor } from '../../../core/interfaces/proveedor.interface';
 import { ProductoService } from '../../../core/services/producto.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { Compra, EstadoCompra, ItemCompra } from '../../../core/interfaces/compras.interface';
+import { Proveedor } from '../../../core/interfaces/proveedor.interface';
 import { Producto } from '../../../core/interfaces/producto.interface';
+
+declare const bootstrap: any;
 
 @Component({
   selector: 'app-compras-list',
@@ -19,13 +22,16 @@ import { Producto } from '../../../core/interfaces/producto.interface';
 })
 export class ComprasListComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private compraService = inject(ComprasService);
-  private alertService = inject(AlertService);
+  private productoService = inject(ProductoService);   // ← corregido: era ComprasService por error
   private proveedorService = inject(ProveedorService);
-  private productoService = inject(ProductoService);
+  private compraService = inject(ComprasService);
+  private authService = inject(AuthService);
+  private alertService = inject(AlertService);
 
-  busqueda: string = '';
+  busqueda = ''
   cargando: boolean = true;
+  productoSeleccionado: Producto | null = null;
+
 
   compras: Compra[] = [];
   proveedor: Proveedor[] = [];
@@ -41,44 +47,65 @@ export class ComprasListComponent implements OnInit {
 
   terminoBusqueda: string = '';
   tipoBusqueda: 'proveedor' | 'producto' = 'proveedor';
-    productoTextoBusqueda:  string = '';
+  productoTextoBusqueda:  string = '';
+
+  // Datos del ítem en edición
+  lote = '';
+  fechaVencimiento = '';
+  cantidad = 1;
+  precioCompra = 0;
+
+  // Compra
+  proveedores: Proveedor[] = [];
+  proveedorSeleccionado: Proveedor | null = null;
+  items: ItemCompra[] = [];
+  guardando = false;
+  nombreUsuario = '';
 
   constructor() {
-  this.formCompra = this.fb.group({
-  productos: ['', [Validators.required, Validators.minLength(1)]],
-  proveedor: ['', Validators.required],
-  usuario: ['', [Validators.required, Validators.minLength(1)]],
-  cantidad: [0, [Validators.required, Validators.min(1)]],
-  precio: [0, [Validators.required, Validators.min(0.01)]],
-  lote: ['', [Validators.required, Validators.minLength(3)]],
-  total: [{ value: 0, disabled: true }],
-  vencimiento: ['', Validators.required]
-});
-  this.formProveedor = this.fb.group({
+    this.formProveedor = this.fb.group({
     razonSocial: ['', [Validators.required, Validators.maxLength(150)]],
-    telefono: ['', [Validators.required, Validators.pattern('[0-9]{9}')]],
+    telefono: ['', Validators.maxLength(15)],
     ruc: ['', [Validators.required, Validators.pattern('[0-9]{11}')]],
-    correo: ['', [Validators.required, Validators.email]],
-    direccion: ['', Validators.required],
-    estado: ['', Validators.required]
+    correo: ['', [Validators.email, Validators.maxLength(100)]],
+    direccion: ['', Validators.maxLength(250)],
+    estado: ['ACTIVO']
   });
-}
+    this.formCompra = this.fb.group({
+    productos: ['', [Validators.required, Validators.minLength(1)]],
+    proveedor: ['', Validators.required],
+    usuario: ['', [Validators.required, Validators.minLength(1)]],
+    cantidad: [0, [Validators.required, Validators.min(1)]],
+    precio: [0, [Validators.required, Validators.min(0.01)]],
+    lote: ['', [Validators.required, Validators.minLength(3)]],
+    total: [{ value: 0, disabled: true }],
+    vencimiento: ['', Validators.required]
+});
+  }
 
   ngOnInit(): void {
     this.cargarCompras();
-    this.proveedorService.listarProveedores().subscribe(data => {
-      this.proveedor = data;
+
+    this.proveedorService.listarProveedores().subscribe({
+      next: (data) => this.proveedores = data,
+      error: (err) => console.error('Error al cargar proveedores:', err)
     });
-    this.productoService.listar().subscribe(data => {
-      this.productos = data;
+
+    // Cargar productos para el buscador
+    this.productoService.listar().subscribe({
+      next: (data) => this.productos = data,
+      error: (err) => console.error('Error al cargar productos:', err)
     });
+
+    // El usuario sale de la sesión, ya no se escribe a mano
+    this.nombreUsuario = this.authService.getUsuario()?.nombre ?? '';
   }
 
   cargarCompras() {
     this.compraService.listarCompras().subscribe({
       next: (data) => {
         this.compras = data;
-        this.comprasFiltradas = data; // Inicialmente, todas las compras
+        this.filtrarCompras();
         this.cargando = false;
       },
       error: (err) => {
@@ -89,79 +116,197 @@ export class ComprasListComponent implements OnInit {
     });
   }
 
-  verDetalles(compra: Compra, index: number) {
-    this.compraSeleccionada = compra;
-    this.numeroCompraSeleccionada = index + 1;
-  }
-
-  verEstado(Compra: Compra) {
-    this.compraSeleccionada = Compra;
-    this.nuevoEstadoSeleccionado = null;
-  }
-
-
-  buscarCompras() {
-    const termino = this.terminoBusqueda.trim().toLowerCase();
-    if (termino === '') {
-      this.comprasFiltradas = this.compras; // Si no hay término, mostrar todas las compras
+  filtrarCompras(): void {
+    const term = this.terminoBusqueda.trim().toLowerCase();
+    if (!term) {
+      this.comprasFiltradas = [...this.compras];
       return;
     }
-    if (this.tipoBusqueda === 'producto') {
-      console.log('Buscando por nombre de producto:', termino);
-      this.comprasFiltradas= this.compras.filter(c => 
-        c.detalles?.some(d => d.nombreProducto?.toLowerCase().includes(termino)));
-    }else{
-      console.log('Buscando por proveedor:', termino);
-      this.comprasFiltradas = this.compras.filter(c => 
-        c.razonSocialProveedor?.toLowerCase().includes(termino));
-    }
 
+    if (this.tipoBusqueda === 'proveedor') {
+      this.comprasFiltradas = this.compras.filter(c =>
+        c.razonSocialProveedor?.toLowerCase().includes(term)
+      );
+    } else {
+      this.comprasFiltradas = this.compras.filter(c => {
+        const detalles = c.detalles || c.detalleCompra || [];
+        return detalles.some(d => d.nombreProducto?.toLowerCase().includes(term));
+      });
+    }
   }
 
-  guardarCompra() { 
-    if(this.formCompra.invalid) {
-      (document.activeElement as HTMLElement)?.blur();
-      this.alertService.error('Por favor, complete todos los campos requeridos correctamente.');
-      console.error('Formulario inválido:', this.formCompra.errors);
+  resetearBusquedaCompras(): void {
+    this.terminoBusqueda = '';
+    this.comprasFiltradas = [...this.compras];
+  }
+
+  getNombrePrimerProducto(compra: Compra): string {
+    const list = compra.detalles || compra.detalleCompra || [];
+    return list[0]?.nombreProducto || '';
+  }
+
+  getCantidadProductosExtra(compra: Compra): number {
+    const list = compra.detalles || compra.detalleCompra || [];
+    return list.length > 1 ? list.length - 1 : 0;
+  }
+
+  tieneProductos(compra: Compra): boolean {
+    const list = compra.detalles || compra.detalleCompra || [];
+    return list.length > 0;
+  }
+
+  get productosFiltrados(): Producto[] {
+    const q = this.busqueda.trim().toLowerCase();
+    if (!q) return [];
+    return this.productos
+      .filter(p => p.nombreProducto?.toLowerCase().includes(q) || (p.codigo ?? '').toLowerCase().includes(q))
+      .slice(0, 8);
+  }
+
+  get total(): number {
+    return this.items.reduce((s, i) => s + i.cantidad * i.precioCompra, 0);
+  }
+
+  verDetalles(compra: Compra, index: number): void {
+    this.compraSeleccionada = compra;
+    this.numeroCompraSeleccionada = index + 1;
+
+    const historialElemento = document.getElementById('comprasModal');
+    const detalleElemento = document.getElementById('detalleCompraModal');
+
+    if (!historialElemento || !detalleElemento) {
+      return;
+    }
+
+    const historialModal = bootstrap.Modal.getOrCreateInstance(historialElemento);
+    const detalleModal = bootstrap.Modal.getOrCreateInstance(detalleElemento);
+
+    historialElemento.addEventListener('hidden.bs.modal', () => {
+      detalleModal.show();
+    }, { once: true });
+
+    detalleElemento.addEventListener('hidden.bs.modal', () => {
+      historialModal.show();
+    }, { once: true });
+
+    historialModal.hide();
+  }
+
+  verEstado(compra: Compra): void {
+    this.compraSeleccionada = compra;
+    this.nuevoEstadoSeleccionado = compra.estado ?? null;
+
+    const historialElemento = document.getElementById('comprasModal');
+    const estadoElemento = document.getElementById('estadoModal');
+
+    if (!historialElemento || !estadoElemento) {
+      return;
+    }
+
+    const historialModal = bootstrap.Modal.getOrCreateInstance(historialElemento);
+    const estadoModal = bootstrap.Modal.getOrCreateInstance(estadoElemento);
+
+    historialElemento.addEventListener('hidden.bs.modal', () => {
+      estadoModal.show();
+    }, { once: true });
+
+    estadoElemento.addEventListener('hidden.bs.modal', () => {
+      historialModal.show();
+    }, { once: true });
+
+    historialModal.hide();
+  }
+
+  seleccionarProducto(p: Producto): void {
+    this.productoSeleccionado = p;
+    this.busqueda = '';
+  }
+
+  cancelarSeleccion(): void {
+    this.productoSeleccionado = null;
+    this.limpiarFormularioItem();
+  }
+
+  agregarALista(): void {
+    if (!this.productoSeleccionado || !this.productoSeleccionado.idProducto) return;
+    if (!this.lote.trim() || !this.fechaVencimiento || this.cantidad < 1 || this.precioCompra <= 0) {
+      this.alertService.error('Completa lote, fecha de vencimiento, cantidad y precio.');
+      return;
+    }
+
+    this.items.push({
+      idProducto: this.productoSeleccionado.idProducto,
+      nombreProducto: this.productoSeleccionado.nombreProducto,
+      lote: this.lote.trim(),
+      fechaVencimiento: this.fechaVencimiento,
+      cantidad: this.cantidad,
+      precioCompra: this.precioCompra
+    });
+
+    this.cancelarSeleccion();
+  }
+
+  eliminarItem(index: number): void {
+    this.items.splice(index, 1);
+  }
+
+  guardarCompra(): void {
+    const usuario = this.authService.getUsuario();
+
+    if (!this.proveedorSeleccionado?.idProveedor) {
+      this.alertService.error('Seleccione un proveedor para registrar la compra.');
+      return;
+    }
+
+    if (this.items.length === 0) {
+      this.alertService.error('Agregue al menos un producto a la compra.');
+      return;
+    }
+
+    if (!usuario?.idUsuario) {
+      this.alertService.error('No se pudo identificar al usuario que registra la compra.');
       return;
     }
 
     const compraData = {
-    idProveedor: Number(this.formCompra.value.proveedor),
-    idUsuario: Number(this.formCompra.value.usuario) || 1, // ID numérico (ej: 1)
-    detalles: [
-      {
-        idProducto: Number(this.formCompra.value.productos),
-        cantidad: Number(this.formCompra.value.cantidad),
-        precioCosto: Number(this.formCompra.value.precio),
-        numeroLote: this.formCompra.value.lote,
-        fechaVencimiento: this.formCompra.value.fechaVencimiento || '2028-12-31' // Obligatorio formato YYYY-MM-DD
-      }
-    ]
-  };
+      idProveedor: this.proveedorSeleccionado.idProveedor,
+      idUsuario: usuario.idUsuario,
+      detalles: this.items.map(item => ({
+        idProducto: item.idProducto,
+        cantidad: item.cantidad,
+        precioCosto: item.precioCompra,
+        numeroLote: item.lote,
+        fechaVencimiento: item.fechaVencimiento
+      }))
+    };
 
     console.log('JSON a enviar al backend:', compraData);
+    this.guardando = true;
 
     this.compraService.crearCompra(compraData).subscribe({
-      next: (compra) => {
+      next: () => {
         (document.activeElement as HTMLElement)?.blur();
         this.alertService.success('Compra creada exitosamente');
-        document.getElementById('closeModalButton')?.click();
         this.cargarCompras();
-        this.formCompra.reset();
-        this.productoTextoBusqueda = '';
+        this.items = [];
+        this.proveedorSeleccionado = null;
+        this.productoSeleccionado = null;
+        this.busqueda = '';
+        this.limpiarFormularioItem();
+        this.guardando = false;
       },
       error: (err) => {
         (document.activeElement as HTMLElement)?.blur();
         console.error('Error al crear compra', err);
-        this.alertService.error('Error al crear la compra');
-        this.formCompra.reset();
+        this.alertService.error('Error al crear la compra: ' + (err.error?.message || 'Verifique los datos ingresados.'));
+        this.guardando = false;
       }
     });
   }
 
   guardarProveedor() {
     if (this.formProveedor.invalid) {
+      this.formProveedor.markAllAsTouched();
       (document.activeElement as HTMLElement)?.blur();
       this.alertService.error('Por favor, complete todos los campos requeridos correctamente.');
       console.error('Formulario proveedor inválido:', this.formProveedor.errors);
@@ -174,7 +319,7 @@ export class ComprasListComponent implements OnInit {
       ruc: this.formProveedor.value.ruc,
       correo: this.formProveedor.value.correo,
       direccion: this.formProveedor.value.direccion,
-      estado: this.formProveedor.value.estado
+      estado: 'ACTIVO' as const
     };
 
     console.log('JSON a enviar al backend:', proveedorData);
@@ -184,12 +329,13 @@ export class ComprasListComponent implements OnInit {
         (document.activeElement as HTMLElement)?.blur();
         this.alertService.success('Proveedor creado exitosamente');
         this.proveedorService.listarProveedores().subscribe(data => {
-          this.proveedor = data;
+          this.proveedores = data;
+          this.proveedorSeleccionado = proveedor;
         });
         this.formProveedor.reset();
         
         // Cerrar modal de nuevo proveedor
-        const btnCerrar = document.querySelector('#modalNuevoProveedor [data-bs-dismiss="modal"]') as HTMLElement;
+        const btnCerrar = document.querySelector('#proveedorModal [data-bs-dismiss="modal"]') as HTMLElement;
         btnCerrar?.click();
       },
       error: (err) => {
@@ -200,7 +346,7 @@ export class ComprasListComponent implements OnInit {
     });
   }
 
-  actualizarEstado():void {
+  async actualizarEstado(): Promise<void> {
     if (!this.compraSeleccionada?.idCompra || !this.nuevoEstadoSeleccionado) {
       this.alertService.error('Debe seleccionar un estado válido');
       return;
@@ -210,15 +356,23 @@ export class ComprasListComponent implements OnInit {
       return;
     }
 
+    const confirmado = await this.alertService.confirm(
+      `¿Desea cambiar el estado de la compra de ${this.compraSeleccionada.estado} a ${this.nuevoEstadoSeleccionado}?`,
+      'Cambiar estado de compra'
+    );
+
+    if (!confirmado) {
+      return;
+    }
+
     this.cargando = true;
 
     this.compraService.actualizarEstadoCompra(this.compraSeleccionada.idCompra, this.nuevoEstadoSeleccionado).subscribe({
-      next: (compraActualizada) => {
+      next: () => {
         (document.activeElement as HTMLElement)?.blur();
-        this.alertService.success(`Estado de compra actualizado exitosamente a ${this.nuevoEstadoSeleccionado} con éxito`);
-        const  btnCerrar = document.querySelector('#modalCambiarEstado [data-bs-dismiss="modal"]') as HTMLElement;
-        btnCerrar?.click();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('estadoModal')).hide();
         this.cargarCompras();
+        this.alertService.toast(`Estado de compra actualizado a ${this.nuevoEstadoSeleccionado}.`);
         this.nuevoEstadoSeleccionado = null;
         this.cargando = false;
       },
@@ -231,31 +385,10 @@ export class ComprasListComponent implements OnInit {
     })
   }
 
-  calcularTotal() {
-    const cantidad = this.formCompra.get('cantidad')?.value || 0;
-    const precio = this.formCompra.get('precio')?.value || 0;
-    const total = cantidad * precio;
-    this.formCompra.get('total')?.setValue(Number(total.toFixed(2))); // Redondea a 2 decimales
+  private limpiarFormularioItem(): void {
+    this.lote = '';
+    this.fechaVencimiento = '';
+    this.cantidad = 1;
+    this.precioCompra = 0;
   }
-
-  limpiarBusqueda() {
-  this.terminoBusqueda = '';
-  this.comprasFiltradas = [...this.compras];
-  }
-
-  onSeleccionarProducto(event: Event): void {
-  const valor = (event.target as HTMLInputElement).value;
-  const productoEncontrado = this.productos.find(
-    p => p.nombreProducto.toLowerCase().trim() === valor.toLowerCase().trim()
-  );
-
-  if (productoEncontrado && productoEncontrado.idProducto) {
-    // Sincroniza el ID numérico con el FormGroup
-    this.formCompra.patchValue({ productos: productoEncontrado.idProducto });
-  } else {
-    // Si borra el texto o escribe algo que no existe, invalida el campo
-    this.formCompra.patchValue({ productos: '' });
-  }
-}
-
 }
