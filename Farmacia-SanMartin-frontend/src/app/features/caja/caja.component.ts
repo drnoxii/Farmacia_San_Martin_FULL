@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CajaService } from '../../core/services/caja.service';
 import { AlertService } from '../../core/services/alert.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Caja, CajaResumen } from '../../core/interfaces/caja.interface';
 import Swal from 'sweetalert2';
 
@@ -15,7 +16,7 @@ import Swal from 'sweetalert2';
 })
 export class CajaComponent implements OnInit {
 
-  idUsuario = 0;          // usuario logueado (se lee del localStorage)
+  idUsuario = 0;          // usuario de la sesión autenticada
   cargando = true;        // true mientras esperamos respuesta del backend
 
   cajaActual: CajaResumen | null = null;   // caja abierta del usuario (con totales)
@@ -34,15 +35,16 @@ export class CajaComponent implements OnInit {
   cajaParaCierre: CajaResumen | null = null;
   ventaExpandida: string | null = null;    // N° de venta cuyo detalle está desplegado
 
-  constructor(private cajaService: CajaService, private alert: AlertService) { }
+  constructor(private cajaService: CajaService, private alert: AlertService, private auth: AuthService) { }
 
   /**
    * QUÉ HACE: al entrar a la pantalla, identifica al usuario y carga los datos.
    * POR QUÉ: la caja pertenece a un usuario; sin su id no sabríamos cuál mostrar.
    */
   ngOnInit(): void {
-    const guardado = localStorage.getItem('usuario');
-    this.idUsuario = guardado ? JSON.parse(guardado).idUsuario : 0;
+    const usuario = this.auth.getUsuario();
+    if (!usuario) { this.auth.cerrarSesion(); return; }
+    this.idUsuario = usuario.idUsuario;
     this.cargar();
   }
 

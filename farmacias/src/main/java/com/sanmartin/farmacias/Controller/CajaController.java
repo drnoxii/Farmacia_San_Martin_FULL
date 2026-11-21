@@ -63,6 +63,7 @@ public class CajaController {
     }
 
     @GetMapping("/usuario/{idUsuario}")
+    @PreAuthorize("hasRole('ADMIN') or #idUsuario == authentication.principal.usuario().getIdUsuario()")
     @Operation(summary = "Listar cajas de un usuario")
     public ResponseEntity<List<CajaDTO>> listarPorUsuario(@PathVariable Long idUsuario) {
         return ResponseEntity.ok(cajaService.listarPorUsuario(idUsuario));

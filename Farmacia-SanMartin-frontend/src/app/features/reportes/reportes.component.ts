@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ReporteService } from '../../core/services/reporte.service';
 import { ExportService, Hoja } from '../../core/services/export.service';
 import { AlertService } from '../../core/services/alert.service';
+import { AuthService } from '../../core/services/auth.service';
 import { VentaService } from '../../core/services/venta.service';
 import { VentaResponse } from '../../core/interfaces/venta-response.interface';
 import { DevolucionVentaResponse } from '../../core/interfaces/devolucion-venta.interface';
@@ -22,6 +23,7 @@ type Periodo = 'hoy' | 'semana' | 'mes' | 'rango';
   styleUrl: './reportes.component.css'
 })
 export class ReportesComponent implements OnInit, OnDestroy {
+  private auth = inject(AuthService);
 
   private reporteService = inject(ReporteService);
   private exportService = inject(ExportService);
@@ -63,9 +65,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   async guardarDevolucion(): Promise<void> {
     if (!this.ventaEditar || this.guardandoDevolucion || !this.detallesADevolver.length) return;
-    let idUsuario: number;
-    try { idUsuario = Number(JSON.parse(localStorage.getItem('usuario') || '{}').idUsuario); }
-    catch { idUsuario = 0; }
+    const idUsuario = this.auth.getUsuario()?.idUsuario ?? 0;
     if (!Number.isInteger(idUsuario) || idUsuario <= 0) {
       this.alert.error('Inicia sesión para registrar la devolución.');
       return;

@@ -196,7 +196,8 @@ public class SecurityConfig {
                         // Consultar caja abierta de un usuario
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/api/v1/cajas/usuario/*/abierta"
+                                "/api/v1/cajas/usuario/*/abierta",
+                                "/api/v1/cajas/usuario/*"
                         ).hasAnyRole("ADMIN", "CAJERO")
 
                         // Consultar una caja por ID

@@ -83,8 +83,8 @@ export class UsuariosComponent implements OnInit {
   // DIRECCIONES DEL BACKEND
   // =====================================
 
-  private apiUrl = 'http://localhost:8080/api/v1/usuario';
-  private registroUrl = 'http://localhost:8080/api/auth/registro';
+  private apiUrl = '/api/v1/usuario';
+  private registroUrl = '/api/auth/registro';
 
   // =====================================
   // LISTADO DE USUARIOS

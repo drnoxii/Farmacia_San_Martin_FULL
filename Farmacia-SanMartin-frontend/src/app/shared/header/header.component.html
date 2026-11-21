@@ -19,11 +19,14 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link" routerLink="/pos" routerLinkActive="active">Punto de Venta</a>
+          <a class="nav-link" routerLink="/ventas" routerLinkActive="active">Punto de Venta</a>
         </li>
 
         <!-- Menú Gestión (Productos, Compras, etc.) -->
-        <li class="nav-item dropdown">
+        <li class="nav-item" *ngIf="!esAdministrador">
+          <a class="nav-link" routerLink="/caja" routerLinkActive="active">Mi caja</a>
+        </li>
+        <li class="nav-item dropdown" *ngIf="esAdministrador">
           <a class="nav-link dropdown-toggle" href="#" role="button"
              data-bs-toggle="dropdown" aria-expanded="false">
             Administración

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
 import { ReporteService } from '../../core/services/reporte.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ReporteInventario } from '../../core/interfaces/reporte.interface';
 
 @Component({
@@ -29,7 +30,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   @ViewChild('panelNotificaciones') panelNotificaciones?: ElementRef<HTMLElement>;
   @ViewChild('botonNotificaciones') botonNotificaciones?: ElementRef<HTMLButtonElement>;
 
-  constructor(private router: Router, private reportes: ReporteService) {
+  constructor(private router: Router, private reportes: ReporteService, private auth: AuthService) {
   
     this.verificarSesion();
   }
@@ -121,9 +122,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.nombreUsuario = '';
     this.rolUsuario = '';
     try {
-      const usuarioGuardado = localStorage.getItem('usuario');
-      if (usuarioGuardado) {
-        const user = JSON.parse(usuarioGuardado);
+      const user = this.auth.getUsuario();
+      if (user) {
         this.estaLogueado = !!user;
         this.nombreUsuario = user?.nombre ?? '';
         this.rolUsuario = user?.rol ?? '';
@@ -133,9 +133,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   cerrarSesion() {
-    localStorage.removeItem('usuario');
     this.estaLogueado = false;
     this.limpiarNotificaciones();
-    this.router.navigate(['/login']);
+    this.auth.cerrarSesion();
   }
 }

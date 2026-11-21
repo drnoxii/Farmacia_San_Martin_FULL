@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { AuthService } from '../../core/services/auth.service';
 import { RouterLink, RouterModule } from '@angular/router';
 
 interface Modulo {
@@ -18,6 +19,7 @@ interface Modulo {
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent {
+  private auth = inject(AuthService);
   
   rolUsuario: string = '';
   nombreUsuario: string = '';
@@ -71,9 +73,8 @@ export class DashboardComponent {
 
   ngOnInit() {
 
-    const usuarioGuardado = localStorage.getItem('usuario');
-    if (usuarioGuardado) {
-      const usuario = JSON.parse(usuarioGuardado);
+    const usuario = this.auth.getUsuario();
+    if (usuario) {
       this.rolUsuario = usuario.rol;
       this.nombreUsuario = usuario.nombre;
     }

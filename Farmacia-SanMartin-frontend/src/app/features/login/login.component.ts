@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -14,38 +16,46 @@ export class LoginComponent {
   
   loginForm: FormGroup;
   errorMensaje: string = '';
+  cargando = false;
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private auth: AuthService
   ) {
     this.loginForm = this.fb.group({
-      correo: ['', Validators.required],
+      correo: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
   }
 
   onLogin() {
+    if (this.cargando) return;
     if (this.loginForm.invalid) {
       this.errorMensaje = 'Por favor, ingresa tu correo y contraseña.';
       return;
     }
 
    
-    const usuarioFalso = {
-      idUsuario: 1,
-      nombre: 'Admin Prueba',
-      rol: 'ADMIN'
-    };
-    
-  
-    localStorage.setItem('usuario', JSON.stringify(usuarioFalso));
-    
-  
-    this.router.navigate(['/dashboard']);
+    this.errorMensaje = '';
+    this.cargando = true;
+    const { correo, password } = this.loginForm.getRawValue();
+    this.auth.login(correo, password).pipe(finalize(() => this.cargando = false)).subscribe({
+      next: () => {
+        this.loginForm.get('password')?.reset();
+        void this.router.navigate(['/dashboard']);
+      },
+      error: error => {
+        this.errorMensaje = error.status === 401
+          ? 'Correo o contraseña incorrectos, o cuenta inactiva.'
+          : error.status === 0
+            ? 'No se pudo conectar con el servidor. Verifica que el backend esté encendido.'
+            : 'No se pudo iniciar sesión. Inténtalo nuevamente.';
+      }
+    });
   }
 
   onOlvidePassword() {
-    alert('Simulación: Se envió un correo de recuperación.');
+    this.errorMensaje = 'Contacta al administrador para recuperar el acceso a tu cuenta.';
   }
 }

@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AlertService } from '../../core/services/alert.service';
+import { AuthService } from '../../core/services/auth.service';
 import { VentaService } from '../../core/services/venta.service';
 import { LoteService } from '../../core/services/lote.service';
 import { ProductoService } from '../../core/services/producto.service';
@@ -24,6 +25,7 @@ import Swal from 'sweetalert2';
   styleUrl: './ventas-pos.component.css'
 })
 export class VentasPosComponent implements OnInit {
+  private auth = inject(AuthService);
 
   private productoService = inject(ProductoService);
   private loteService = inject(LoteService);
@@ -74,7 +76,8 @@ export class VentasPosComponent implements OnInit {
 
   // Obtiene la caja ABIERTA del usuario logueado
   cargarCaja(): void {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const usuario = this.auth.getUsuario();
+    if (!usuario) { this.auth.cerrarSesion(); return; }
 
     // Bloquea la pantalla mientras verificamos la caja
     Swal.fire({
@@ -101,6 +104,7 @@ export class VentasPosComponent implements OnInit {
       },
 
       error: async (err) => {
+        if (err.status === 401) { Swal.close(); return; }
         console.error('Error al verificar caja:', err);
 
         this.idCaja = null;
@@ -369,7 +373,8 @@ export class VentasPosComponent implements OnInit {
       return;
     }
 
-    const usuarioLogueado = JSON.parse(localStorage.getItem('usuario') || '{}');
+    const usuarioLogueado = this.auth.getUsuario();
+    if (!usuarioLogueado) { this.auth.cerrarSesion(); return; }
 
     const ventaRequest: VentaRequest = {
       idCliente: this.clienteSeleccionado?.idCliente ?? null,

@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HeaderComponent } from './header.component';
 import { ReporteService } from '../../core/services/reporte.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ReporteInventario } from '../../core/interfaces/reporte.interface';
 
 describe('Notificaciones de inventario del administrador', () => {
@@ -16,12 +17,12 @@ describe('Notificaciones de inventario del administrador', () => {
 
   beforeEach(async () => {
     sesion = JSON.stringify({ nombre: 'Administrador', rol: 'ADMIN' });
-    spyOn(Storage.prototype, 'getItem').and.callFake(key => key === 'usuario' ? sesion : null);
     reportes = jasmine.createSpyObj('ReporteService', ['inventario']);
     reportes.inventario.and.returnValue(of(inventario));
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
-      providers: [provideRouter([]), { provide: ReporteService, useValue: reportes }]
+      providers: [provideRouter([]), { provide: ReporteService, useValue: reportes },
+        { provide: AuthService, useValue: { getUsuario: () => JSON.parse(sesion || 'null'), cerrarSesion: () => {} } }]
     }).compileComponents();
   });
 

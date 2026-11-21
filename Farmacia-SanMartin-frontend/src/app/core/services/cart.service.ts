@@ -21,12 +21,15 @@ export class CartService {
   }
 
   private loadCart(): CartItem[] {
-    const cart = localStorage.getItem('cart_farmacia');
-    return cart ? JSON.parse(cart) : [];
+    if (typeof sessionStorage === 'undefined') return [];
+    try {
+      const cart = JSON.parse(sessionStorage.getItem('cart_farmacia') || '[]');
+      return Array.isArray(cart) ? cart : [];
+    } catch { return []; }
   }
 
   private saveCart() {
-    localStorage.setItem('cart_farmacia', JSON.stringify(this.cartItems()));
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('cart_farmacia', JSON.stringify(this.cartItems()));
   }
 
   agregarProducto(producto: Producto, lote: Lote, cantidad: number) {

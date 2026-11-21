@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth.guard';
 import { MainLayoutComponent } from './shared/layouts/main-layout/main-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { LoginComponent } from './features/login/login.component';
@@ -24,17 +25,18 @@ export const routes: Routes = [
   {
         path: '',
         component: MainLayoutComponent,
+        canActivateChild: [authGuard],
         children: [
             
             {path : 'dashboard', component: DashboardComponent},
-            { path: 'productos', component: ProductListComponent},
-            { path: 'productos/nuevo', component: ProductFormComponent},
-            { path: 'productos/editar/:id', component: ProductFormComponent },
-            {path: 'compras', component: ComprasListComponent},
+            { path: 'productos', component: ProductListComponent, data: { admin: true }},
+            { path: 'productos/nuevo', component: ProductFormComponent, data: { admin: true }},
+            { path: 'productos/editar/:id', component: ProductFormComponent, data: { admin: true } },
+            {path: 'compras', component: ComprasListComponent, data: { admin: true }},
             {path: 'ventas', component: VentasPosComponent},
-            {path: 'usuarios', component: UsuariosComponent},
+            {path: 'usuarios', component: UsuariosComponent, data: { admin: true }},
             { path: 'caja', component: CajaComponent },
-            { path: 'reportes', component: ReportesComponent },
+            { path: 'reportes', component: ReportesComponent, data: { admin: true } },
         ]
     },
     {

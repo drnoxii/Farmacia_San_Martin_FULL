@@ -26,7 +26,7 @@
             <label class="form-label fw-semibold">Correo Electrónico</label>
             <div class="input-group">
               <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
-              <input type="email" class="form-control form-control-lg" formControlName="correo" placeholder="admin@farmacia.com">
+              <input type="email" class="form-control form-control-lg" formControlName="correo" autocomplete="username" placeholder="Tu correo registrado">
             </div>
             <!-- Error de validación -->
             <small class="text-danger" *ngIf="loginForm.get('correo')?.invalid && loginForm.get('correo')?.touched">
@@ -39,19 +39,19 @@
             <label class="form-label fw-semibold">Contraseña</label>
             <div class="input-group">
               <span class="input-group-text bg-white"><i class="bi bi-lock"></i></span>
-              <input type="password" class="form-control form-control-lg" formControlName="password" placeholder="••••••••">
+              <input type="password" class="form-control form-control-lg" formControlName="password" autocomplete="current-password" placeholder="••••••••">
             </div>
           </div>
 
           <!-- Alerta de Error -->
-          <div class="alert alert-danger py-2" *ngIf="errorMensaje">
+          <div class="alert alert-danger py-2" *ngIf="errorMensaje" role="alert">
             {{ errorMensaje }}
           </div>
 
           <!-- Botón -->
           <button type="submit" class="btn btn-lg w-100 fw-bold text-white shadow-sm" 
-                  style="background-color: var(--color-primario);">
-            Iniciar Sesión
+                  [disabled]="cargando" style="background-color: var(--color-primario);">
+            {{ cargando ? 'Iniciando sesión…' : 'Iniciar Sesión' }}
           </button>
 
           <!-- Olvidé contraseña -->
