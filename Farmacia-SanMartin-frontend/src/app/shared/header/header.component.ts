@@ -40,7 +40,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   get totalNotificaciones(): number {
     return (this.inventarioAlertas?.stockBajo.length ?? 0)
-      + (this.inventarioAlertas?.lotesPorVencer.length ?? 0);
+      + (this.inventarioAlertas?.lotesPorVencer.length ?? 0)
+      + (this.inventarioAlertas?.lotesVencidos.length ?? 0);
   }
 
   ngOnInit(): void {
@@ -63,6 +64,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (!this.esAdministrador) return;
     this.notificacionesAbiertas = !this.notificacionesAbiertas;
     if (this.notificacionesAbiertas) this.cargarNotificaciones();
+  }
+
+  abrirInventario(seccion: 'stock-bajo' | 'por-vencer' | 'vencidos'): void {
+    this.notificacionesAbiertas = false;
+    void this.router.navigate(['/reportes'], { queryParams: { tab: 'inventario', seccion } })
+      .then(() => document.getElementById(seccion)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   cargarNotificaciones(): void {

@@ -237,7 +237,7 @@
   <!-- ================= INVENTARIO ================= -->
   <ng-container *ngIf="tab === 'inventario' && inventario as i">
 
-    <div class="card shadow-sm border-0 mb-3">
+    <div class="card shadow-sm border-0 mb-3" id="stock-bajo">
       <div class="card-header bg-white fw-bold">
         Stock bajo el mínimo <span class="badge bg-danger ms-2">{{ i.stockBajo.length }}</span>
       </div>
@@ -266,7 +266,7 @@
       </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-3">
+    <div class="card shadow-sm border-0 mb-3" id="por-vencer">
       <div class="card-header bg-white fw-bold">
         Lotes por vencer (próximos {{ i.dias }} días) <span class="badge bg-warning text-dark ms-2">{{ i.lotesPorVencer.length }}</span>
       </div>
@@ -297,7 +297,7 @@
       </div>
     </div>
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0" id="vencidos">
       <div class="card-header bg-white fw-bold">
         Lotes vencidos con stock <span class="badge bg-dark ms-2">{{ i.lotesVencidos.length }}</span>
       </div>

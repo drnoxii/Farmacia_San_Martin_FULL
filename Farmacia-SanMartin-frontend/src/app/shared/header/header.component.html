@@ -72,24 +72,36 @@
                 <ng-container *ngIf="!cargandoNotificaciones && !errorNotificaciones && inventarioAlertas as alertas">
                   <div *ngIf="totalNotificaciones === 0" class="p-4 text-center text-muted">
                     <i class="bi bi-check-circle fs-3 text-success d-block mb-2" aria-hidden="true"></i>
-                    No hay productos con stock bajo ni lotes por vencer en los próximos {{ diasAviso }} días.
+                    No hay productos con stock bajo, lotes vencidos con stock ni lotes por vencer en los próximos {{ diasAviso }} días.
                   </div>
                   <ng-container *ngIf="alertas.stockBajo.length">
                     <div class="grupo-notificaciones"><i class="bi bi-box-seam text-danger me-2" aria-hidden="true"></i>Stock bajo <span class="badge bg-danger ms-1">{{ alertas.stockBajo.length }}</span></div>
-                    <div *ngFor="let producto of alertas.stockBajo" class="aviso-inventario">
+                    <button *ngFor="let producto of alertas.stockBajo" type="button" class="aviso-inventario enlace-aviso"
+                      (click)="abrirInventario('stock-bajo')">
                       <strong>{{ producto.producto }}</strong>
                       <div class="small text-muted">{{ producto.codigo }}</div>
                       <div class="small mt-1">Stock: <b class="text-danger">{{ producto.stockActual }}</b> · Mínimo: {{ producto.stockMinimo }} · Faltan: {{ producto.faltante }}</div>
-                    </div>
+                    </button>
                   </ng-container>
                   <ng-container *ngIf="alertas.lotesPorVencer.length">
                     <div class="grupo-notificaciones"><i class="bi bi-calendar-event text-warning me-2" aria-hidden="true"></i>Por vencer · {{ diasAviso }} días <span class="badge bg-warning text-dark ms-1">{{ alertas.lotesPorVencer.length }}</span></div>
-                    <div *ngFor="let lote of alertas.lotesPorVencer" class="aviso-inventario">
+                    <button *ngFor="let lote of alertas.lotesPorVencer" type="button" class="aviso-inventario enlace-aviso"
+                      (click)="abrirInventario('por-vencer')">
                       <strong>{{ lote.producto }}</strong>
                       <div class="small text-muted">{{ lote.codigo }} · Lote {{ lote.numeroLote }}</div>
                       <div class="small mt-1">Vence: {{ lote.fechaVencimiento | date:'dd/MM/yyyy' }} · Stock: {{ lote.stock }}</div>
                       <span class="badge mt-1" [ngClass]="lote.diasRestantes <= 7 ? 'bg-danger' : 'bg-warning text-dark'">{{ lote.diasRestantes === 0 ? 'Vence hoy' : 'Vence en ' + lote.diasRestantes + ' días' }}</span>
-                    </div>
+                    </button>
+                  </ng-container>
+                  <ng-container *ngIf="alertas.lotesVencidos.length">
+                    <div class="grupo-notificaciones"><i class="bi bi-exclamation-triangle-fill text-danger me-2" aria-hidden="true"></i>Vencidos con stock <span class="badge bg-danger ms-1">{{ alertas.lotesVencidos.length }}</span></div>
+                    <button *ngFor="let lote of alertas.lotesVencidos" type="button" class="aviso-inventario enlace-aviso"
+                      (click)="abrirInventario('vencidos')">
+                      <strong>{{ lote.producto }}</strong>
+                      <div class="small text-muted">{{ lote.codigo }} · Lote {{ lote.numeroLote }}</div>
+                      <div class="small mt-1">Venció: {{ lote.fechaVencimiento | date:'dd/MM/yyyy' }} · Stock: {{ lote.stock }}</div>
+                      <span class="badge bg-danger mt-1">Vencido</span>
+                    </button>
                   </ng-container>
                 </ng-container>
               </div>

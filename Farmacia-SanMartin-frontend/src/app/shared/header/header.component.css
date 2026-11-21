@@ -30,6 +30,9 @@
 .grupo-notificaciones { background: #f8f9fa; padding: 10px 16px; font-size: 13px; font-weight: 600; }
 .aviso-inventario { padding: 12px 16px; border-bottom: 1px solid #edf0f2; overflow-wrap: anywhere; }
 .aviso-inventario strong { font-size: 14px; }
+.enlace-aviso { display: block; width: 100%; text-align: left; color: inherit; background: white; border: 0; border-bottom: 1px solid #edf0f2; }
+.enlace-aviso:hover { background: #eaf7f5; color: #075f55; }
+.enlace-aviso:focus-visible { outline: 2px solid #00897b; outline-offset: -2px; }
 @media (max-width: 991px) {
   .panel-notificaciones { left: 0; right: auto; }
 }
