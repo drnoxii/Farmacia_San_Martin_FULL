@@ -1,4 +1,3 @@
-
 <div class="usuarios-container">
 
   <!-- ENCABEZADO -->
@@ -56,21 +55,12 @@
     <!-- FILTROS -->
     <div class="filtros">
 
-      <input
-        type="text"
-        placeholder="Buscar por nombre, DNI o correo..."
-        [(ngModel)]="busqueda"
+      <input type="text" placeholder="Buscar por nombre, DNI o correo..." [(ngModel)]="busqueda"
         (ngModelChange)="filtrarUsuarios()">
 
-      <input
-        type="text"
-        value="CAJERO"
-        readonly
-        class="filtro-rol">
+      <input type="text" value="CAJERO" readonly class="filtro-rol">
 
-      <select
-        [(ngModel)]="filtroEstado"
-        (ngModelChange)="filtrarUsuarios()">
+      <select [(ngModel)]="filtroEstado" (ngModelChange)="filtrarUsuarios()">
 
         <option value="">Todos los estados</option>
         <option value="ACTIVO">Activo</option>
@@ -78,10 +68,7 @@
 
       </select>
 
-      <button
-        type="button"
-        class="btn-limpiar"
-        (click)="limpiarFiltros()">
+      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()">
         Limpiar
       </button>
 
@@ -121,17 +108,13 @@
             <td>{{ usuario.telefono || '-' }}</td>
 
             <td>
-              <span
-                class="rol"
-                [ngClass]="usuario.rol === 'ADMIN' ? 'administrador' : 'cajero'">
+              <span class="rol" [ngClass]="usuario.rol === 'ADMIN' ? 'administrador' : 'cajero'">
                 {{ usuario.rol }}
               </span>
             </td>
 
             <td>
-              <span
-                class="estado"
-                [ngClass]="usuario.estado === 'ACTIVO' ? 'activo' : 'inactivo'">
+              <span class="estado" [ngClass]="usuario.estado === 'ACTIVO' ? 'activo' : 'inactivo'">
                 {{ usuario.estado }}
               </span>
             </td>
@@ -140,21 +123,13 @@
             <td class="acciones">
 
               <!-- EDITAR -->
-              <button
-                type="button"
-                class="btn-editar"
-                (click)="editarUsuario(usuario)"
-                title="Editar usuario">
+              <button type="button" class="btn-editar" (click)="editarUsuario(usuario)" title="Editar usuario">
                 ✏️
               </button>
 
               <!-- ACTIVAR / DESACTIVAR -->
-              <button
-                type="button"
-                class="btn-estado"
-                [class.activar]="usuario.estado === 'INACTIVO'"
-                [class.desactivar]="usuario.estado === 'ACTIVO'"
-                (click)="cambiarEstado(usuario)">
+              <button type="button" class="btn-estado" [class.activar]="usuario.estado === 'INACTIVO'"
+                [class.desactivar]="usuario.estado === 'ACTIVO'" (click)="cambiarEstado(usuario)">
 
                 {{ usuario.estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}
 
@@ -202,10 +177,7 @@
         <p>Completa los datos para crear una nueva cuenta.</p>
       </div>
 
-      <button
-        type="button"
-        class="btn-cerrar"
-        (click)="cerrarFormulario()">
+      <button type="button" class="btn-cerrar" (click)="cerrarFormulario()">
         ×
       </button>
     </div>
@@ -218,38 +190,48 @@
         <div class="campo">
           <label>Nombre completo *</label>
 
-          <input
-            type="text"
-            name="nombre"
-            [(ngModel)]="nuevoUsuario.nombre"
-            placeholder="Ingrese nombres y apellidos"
-            maxlength="150"
-            required>
+          <input type="text" name="nombre" [(ngModel)]="nuevoUsuario.nombre" placeholder="Ingrese nombres y apellidos"
+            maxlength="150" required>
         </div>
 
         <!-- DNI -->
+
+        <!-- DNI CON CONSULTA FACTILIZA -->
         <div class="campo">
           <label>DNI *</label>
 
-          <input
-            type="text"
-            name="numeroDocumento"
-            [(ngModel)]="nuevoUsuario.numeroDocumento"
-            placeholder="Ingrese 8 dígitos"
-            maxlength="8"
-            pattern="[0-9]{8}"
-            required>
+          <div class="dni-contenedor">
+
+            <input type="text" name="numeroDocumento" [(ngModel)]="nuevoUsuario.numeroDocumento"
+              (ngModelChange)="cambiarDni()" placeholder="Ingrese 8 dígitos" maxlength="8" inputmode="numeric"
+              pattern="[0-9]{8}" required>
+
+            <button type="button" class="btn-consultar-dni" [disabled]="consultandoDni ||
+                  guardando ||
+                  nuevoUsuario.numeroDocumento.length !== 8" (click)="consultarDni()">
+
+              <i class="bi" [ngClass]="consultandoDni
+           ? 'bi-arrow-repeat'
+           : 'bi-search'">
+              </i>
+
+              {{ consultandoDni ? 'Consultando...' : 'Consultar' }}
+            </button>
+
+          </div>
+
+          <small *ngIf="mensajeConsultaDni" class="mensaje-consulta-dni">
+            <i class="bi bi-check-circle me-1"></i>
+            {{ mensajeConsultaDni }}
+          </small>
         </div>
+
 
         <!-- TELÉFONO -->
         <div class="campo">
           <label>Teléfono</label>
 
-          <input
-            type="text"
-            name="telefono"
-            [(ngModel)]="nuevoUsuario.telefono"
-            placeholder="Ingrese teléfono"
+          <input type="text" name="telefono" [(ngModel)]="nuevoUsuario.telefono" placeholder="Ingrese teléfono"
             maxlength="15">
         </div>
 
@@ -257,24 +239,15 @@
         <div class="campo">
           <label>Correo electrónico *</label>
 
-          <input
-            type="email"
-            name="correo"
-            [(ngModel)]="nuevoUsuario.correo"
-            placeholder="ejemplo@correo.com"
-            maxlength="50"
-            required>
+          <input type="email" name="correo" [(ngModel)]="nuevoUsuario.correo" placeholder="ejemplo@correo.com"
+            maxlength="50" required>
         </div>
 
         <!-- DIRECCIÓN -->
         <div class="campo campo-completo">
           <label>Dirección</label>
 
-          <input
-            type="text"
-            name="direccion"
-            [(ngModel)]="nuevoUsuario.direccion"
-            placeholder="Ingrese dirección"
+          <input type="text" name="direccion" [(ngModel)]="nuevoUsuario.direccion" placeholder="Ingrese dirección"
             maxlength="250">
         </div>
 
@@ -282,11 +255,7 @@
         <div class="campo">
           <label>Contraseña *</label>
 
-          <input
-            type="password"
-            name="password"
-            [(ngModel)]="nuevoUsuario.password"
-            placeholder="Ingrese contraseña"
+          <input type="password" name="password" [(ngModel)]="nuevoUsuario.password" placeholder="Ingrese contraseña"
             required>
         </div>
 
@@ -294,10 +263,7 @@
         <div class="campo">
           <label>Rol *</label>
 
-          <input
-            type="text"
-            value="CAJERO"
-            disabled>
+          <input type="text" value="CAJERO" disabled>
         </div>
 
       </div>
@@ -308,17 +274,11 @@
 
       <div class="modal-acciones">
 
-        <button
-          type="button"
-          class="btn-cancelar"
-          (click)="cerrarFormulario()">
+        <button type="button" class="btn-cancelar" (click)="cerrarFormulario()">
           Cancelar
         </button>
 
-        <button
-          type="submit"
-          class="btn-guardar"
-          [disabled]="guardando || formulario.invalid">
+        <button type="submit" class="btn-guardar" [disabled]="guardando || consultandoDni || formulario.invalid">
 
           {{ guardando ? 'Registrando...' : 'Guardar usuario' }}
 
@@ -347,17 +307,12 @@
         <p>Modifica los datos de la cuenta seleccionada.</p>
       </div>
 
-      <button
-        type="button"
-        class="btn-cerrar"
-        (click)="cerrarEdicion()">
+      <button type="button" class="btn-cerrar" (click)="cerrarEdicion()">
         ×
       </button>
     </div>
 
-    <form
-      (ngSubmit)="guardarCambios()"
-      #formularioEdicion="ngForm">
+    <form (ngSubmit)="guardarCambios()" #formularioEdicion="ngForm">
 
       <div class="formulario-grid">
 
@@ -365,38 +320,23 @@
         <div class="campo">
           <label>Nombre completo *</label>
 
-          <input
-            type="text"
-            name="nombreEdicion"
-            [(ngModel)]="usuarioEdicion.nombre"
-            placeholder="Ingrese nombres y apellidos"
-            maxlength="150"
-            required>
+          <input type="text" name="nombreEdicion" [(ngModel)]="usuarioEdicion.nombre"
+            placeholder="Ingrese nombres y apellidos" maxlength="150" required>
         </div>
 
         <!-- DNI -->
         <div class="campo">
           <label>DNI *</label>
 
-          <input
-            type="text"
-            name="dniEdicion"
-            [(ngModel)]="usuarioEdicion.numeroDocumento"
-            placeholder="Ingrese 8 dígitos"
-            maxlength="8"
-            pattern="[0-9]{8}"
-            required>
+          <input type="text" name="dniEdicion" [(ngModel)]="usuarioEdicion.numeroDocumento"
+            placeholder="Ingrese 8 dígitos" maxlength="8" pattern="[0-9]{8}" required>
         </div>
 
         <!-- TELÉFONO -->
         <div class="campo">
           <label>Teléfono</label>
 
-          <input
-            type="text"
-            name="telefonoEdicion"
-            [(ngModel)]="usuarioEdicion.telefono"
-            placeholder="Ingrese teléfono"
+          <input type="text" name="telefonoEdicion" [(ngModel)]="usuarioEdicion.telefono" placeholder="Ingrese teléfono"
             maxlength="15">
         </div>
 
@@ -404,36 +344,23 @@
         <div class="campo">
           <label>Correo electrónico *</label>
 
-          <input
-            type="email"
-            name="correoEdicion"
-            [(ngModel)]="usuarioEdicion.correo"
-            placeholder="ejemplo@correo.com"
-            maxlength="50"
-            required>
+          <input type="email" name="correoEdicion" [(ngModel)]="usuarioEdicion.correo" placeholder="ejemplo@correo.com"
+            maxlength="50" required>
         </div>
 
         <!-- DIRECCIÓN -->
         <div class="campo campo-completo">
           <label>Dirección</label>
 
-          <input
-            type="text"
-            name="direccionEdicion"
-            [(ngModel)]="usuarioEdicion.direccion"
-            placeholder="Ingrese dirección"
-            maxlength="250">
+          <input type="text" name="direccionEdicion" [(ngModel)]="usuarioEdicion.direccion"
+            placeholder="Ingrese dirección" maxlength="250">
         </div>
 
         <!-- ROL AUTOMATICO EN EDITAR-->
         <div class="campo campo-completo">
           <label>Rol del usuario *</label>
 
-          <input
-            type="text"
-            name="rolEdicion"
-            value="CAJERO"
-            disabled>
+          <input type="text" name="rolEdicion" value="CAJERO" disabled>
         </div>
 
       </div>
@@ -444,17 +371,11 @@
 
       <div class="modal-acciones">
 
-        <button
-          type="button"
-          class="btn-cancelar"
-          (click)="cerrarEdicion()">
+        <button type="button" class="btn-cancelar" (click)="cerrarEdicion()">
           Cancelar
         </button>
 
-        <button
-          type="submit"
-          class="btn-guardar"
-          [disabled]="guardandoEdicion || formularioEdicion.invalid">
+        <button type="submit" class="btn-guardar" [disabled]="guardandoEdicion || formularioEdicion.invalid">
 
           {{ guardandoEdicion ? 'Guardando...' : 'Guardar cambios' }}
 

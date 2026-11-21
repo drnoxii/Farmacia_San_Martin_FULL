@@ -42,7 +42,15 @@ export class VentasPosComponent implements OnInit {
   dniBusqueda: string = '';
   clienteSeleccionado: Cliente | null = null;
   buscandoCliente: boolean = false;
-  nuevoCliente = { numeroDocumento: '', nombre: '', telefono: '', direccion: '' };
+
+  nuevoCliente = {
+    numeroDocumento: '',
+    nombre: '',
+    telefono: '',
+    direccion: '',
+    sexo: '' as '' | 'MASCULINO' | 'FEMENINO'
+  };
+
   tipoDocumentoSeleccionado: 'DNI' | 'RUC' = 'DNI';
 
   // ---------- Productos ----------
@@ -139,41 +147,121 @@ export class VentasPosComponent implements OnInit {
 
   // ========== CLIENTE ==========
 
+
   buscarCliente(): void {
-    const maxLength = this.tipoDocumentoSeleccionado === 'DNI' ? 8 : 11;
-    if (!this.dniBusqueda || this.dniBusqueda.length !== maxLength) {
-      this.alertService.error(`El ${this.tipoDocumentoSeleccionado} debe tener exactamente ${maxLength} dígitos`);
+    if (this.buscandoCliente) return;
+
+    const documento = this.dniBusqueda.trim();
+    const tipo = this.tipoDocumentoSeleccionado;
+
+    const valido = tipo === 'DNI'
+      ? /^\d{8}$/.test(documento)
+      : /^\d{11}$/.test(documento);
+
+    if (!valido) {
+      this.alertService.error(
+        `Ingresa un ${tipo} válido de ${tipo === 'DNI' ? 8 : 11} dígitos`
+      );
       return;
     }
 
     this.buscandoCliente = true;
-    this.clienteService.buscarPorDni(this.dniBusqueda).subscribe({
-      next: (cli) => {
-        this.clienteSeleccionado = cli;
+
+    // Primero consultar clientes registrados en Oracle.
+    this.clienteService.buscarPorDni(documento).subscribe({
+      next: (cliente) => {
         this.buscandoCliente = false;
-        this.ajustarTipoComprobante(cli.numeroDocumento);
+        this.clienteSeleccionado = cliente;
+        this.ajustarTipoComprobante(cliente.numeroDocumento);
+
+        this.alertService.toast(
+          'Cliente encontrado correctamente',
+          'success'
+        );
       },
-      error: () => {
-        this.buscandoCliente = false;
-        this.alertService.confirm(
-          'Cliente no encontrado. ¿Deseas registrarlo?',
-          'Nuevo Cliente'
-        ).then((confirmado) => {
-          if (confirmado) {
-            this.nuevoCliente = {
-              numeroDocumento: this.dniBusqueda,
-              nombre: '',
-              telefono: '',
-              direccion: ''
-            };
-            document.getElementById('btnAbrirModalCliente')?.click();
+
+      error: async (err) => {
+        // No registrar como nuevo un cliente ante un error del servidor.
+        if (err.status !== 404) {
+          this.buscandoCliente = false;
+          this.alertService.error(
+            'No se pudo buscar al cliente. Verifica la conexión.'
+          );
+          return;
+        }
+
+        const confirmado = await this.alertService.confirm(
+          'El cliente no está registrado. ¿Deseas registrarlo?',
+          'Cliente no encontrado'
+        );
+
+        if (!confirmado) {
+          this.buscandoCliente = false;
+          return;
+        }
+
+        // Preparar los datos del registro.
+        this.nuevoCliente = {
+          numeroDocumento: documento,
+          nombre: '',
+          telefono: '',
+          direccion: '',
+          sexo: ''
+        };
+        // Para RUC mantenemos el registro manual.
+        if (tipo === 'RUC') {
+          this.buscandoCliente = false;
+          this.abrirModalNuevoCliente();
+          return;
+        }
+
+        // Para DNI consultamos la API de Factiliza.
+        this.clienteService.consultarDni(documento).subscribe({
+          next: (persona) => {
+            this.buscandoCliente = false;
+
+            const nombreCompleto = [
+              persona.nombre,
+              persona.apellidoPaterno,
+              persona.apellidoMaterno
+            ]
+              .filter((parte): parte is string =>
+                typeof parte === 'string' &&
+                parte.trim().length > 0
+              )
+              .join(' ');
+
+            this.nuevoCliente.nombre = nombreCompleto;
+            this.nuevoCliente.direccion = persona.direccion ?? '';
+            this.nuevoCliente.telefono = persona.telefono ?? '';
+
+            this.abrirModalNuevoCliente();
+
+            this.alertService.toast(
+              'Datos obtenidos mediante Factiliza',
+              'success'
+            );
+          },
+
+          error: (error) => {
+            this.buscandoCliente = false;
+            console.error('Error al consultar DNI:', error);
+
+            // Si falla Factiliza, permitir registro manual.
+            this.abrirModalNuevoCliente();
+
+            this.alertService.toast(
+              'No se pudo consultar el DNI. Completa los datos manualmente.',
+              'info'
+            );
           }
         });
       }
     });
   }
 
-  // RUC (11) -> FACTURA, DNI (8) -> BOLETA
+
+
   ajustarTipoComprobante(documento: string): void {
     if (documento.length === 11) {
       this.tipoComprobante = 'FACTURA';
@@ -182,26 +270,52 @@ export class VentasPosComponent implements OnInit {
     }
   }
 
+
+  private abrirModalNuevoCliente(): void {
+    document.getElementById('btnAbrirModalCliente')?.click();
+  }
+
+
+
+
   guardarNuevoCliente(): void {
-    this.clienteService.crearCliente(this.nuevoCliente).subscribe({
-      next: (cli) => {
-        this.clienteSeleccionado = cli;
-        this.alertService.success('Cliente registrado');
-        this.ajustarTipoComprobante(cli.numeroDocumento);
+    if (!this.nuevoCliente.nombre.trim()) {
+      this.alertService.error('Ingresa el nombre del cliente');
+      return;
+    }
+
+
+    this.clienteService.crearCliente({
+      ...this.nuevoCliente,
+      sexo: this.tipoDocumentoSeleccionado === 'DNI'
+        ? (this.nuevoCliente.sexo || null)
+        : null
+    }).subscribe({
+
+      next: (cliente) => {
+        // Seleccionar automáticamente al cliente registrado
+        this.clienteSeleccionado = cliente;
+
+        // Ajustar boleta o factura según su documento
+        this.ajustarTipoComprobante(cliente.numeroDocumento);
+
+        // Cerrar el modal
         document.getElementById('btnCerrarModalCliente')?.click();
+
+        this.alertService.success('Cliente registrado correctamente');
       },
+
       error: (err) => {
-        console.error(err);
-        this.alertService.error('Error al crear el cliente. Verifica los datos.');
+        console.error('Error al registrar cliente:', err);
+
+        this.alertService.error(
+          err.error?.message ||
+          'Error al crear el cliente. Verifica los datos.'
+        );
       }
     });
   }
 
-  quitarCliente(): void {
-    this.clienteSeleccionado = null;
-    this.dniBusqueda = '';
-    this.tipoComprobante = 'BOLETA';
-  }
 
   // ========== PRODUCTOS ==========
 
@@ -283,6 +397,14 @@ export class VentasPosComponent implements OnInit {
       }
     });
   }
+
+
+  quitarCliente(): void {
+    this.clienteSeleccionado = null;
+    this.dniBusqueda = '';
+    this.tipoComprobante = 'BOLETA';
+  }
+
 
   imprimirTicket(): void {
     if (!this.ventaGenerada) {

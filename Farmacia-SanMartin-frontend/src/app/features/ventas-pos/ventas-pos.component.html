@@ -2,7 +2,8 @@
 
     <!-- AVISO: sin caja abierta -->
     <div class="alert alert-warning d-flex justify-content-between align-items-center" *ngIf="!cajaAbierta">
-        <span><i class="bi bi-exclamation-triangle me-2"></i>No tienes una caja abierta. Ábrela para poder cobrar.</span>
+        <span><i class="bi bi-exclamation-triangle me-2"></i>No tienes una caja abierta. Ábrela para poder
+            cobrar.</span>
         <a routerLink="/caja" class="btn btn-sm btn-warning">Ir a Caja</a>
     </div>
 
@@ -42,7 +43,8 @@
                     <select class="form-select mb-3" [(ngModel)]="loteSeleccionado">
                         <option [ngValue]="null" disabled>Seleccione un lote...</option>
                         <option *ngFor="let l of lotesDisponibles" [ngValue]="l">
-                            Lote: {{ l.numeroLote }} | Vence: {{ l.fechaVencimiento | date:'dd/MM/yyyy' }} | Stock: {{ l.stockLote }}
+                            Lote: {{ l.numeroLote }} | Vence: {{ l.fechaVencimiento | date:'dd/MM/yyyy' }} | Stock: {{
+                            l.stockLote }}
                         </option>
                     </select>
 
@@ -72,14 +74,17 @@
 
                 <div class="card-body p-0 d-flex flex-column">
                     <div class="p-3 border-bottom bg-light">
-                        <label class="fw-bold small mb-2"><i class="bi bi-person-badge me-1"></i> Cliente (Opcional)</label>
+                        <label class="fw-bold small mb-2"><i class="bi bi-person-badge me-1"></i> Cliente
+                            (Opcional)</label>
 
                         <!-- Si ya hay un cliente seleccionado -->
                         <div class="d-flex justify-content-between align-items-center bg-white p-2 border border-success rounded shadow-sm"
                             *ngIf="clienteSeleccionado">
                             <div>
-                                <strong class="text-success" style="font-size: 0.9rem;">{{ clienteSeleccionado.nombre }}</strong><br>
-                                <small class="text-muted" style="font-size: 0.75rem;">Doc: {{ clienteSeleccionado.numeroDocumento }}</small>
+                                <strong class="text-success" style="font-size: 0.9rem;">{{ clienteSeleccionado.nombre
+                                    }}</strong><br>
+                                <small class="text-muted" style="font-size: 0.75rem;">Doc: {{
+                                    clienteSeleccionado.numeroDocumento }}</small>
                             </div>
                             <button class="btn btn-sm btn-outline-danger p-1" (click)="quitarCliente()">
                                 <i class="bi bi-x-lg"></i>
@@ -88,16 +93,28 @@
 
                         <!-- Si no hay cliente, mostramos el buscador -->
                         <div class="input-group input-group-sm" *ngIf="!clienteSeleccionado">
-                            <select class="form-select" style="max-width: 90px;" [(ngModel)]="tipoDocumentoSeleccionado">
+                            <select class="form-select" style="max-width: 90px;"
+                                [(ngModel)]="tipoDocumentoSeleccionado">
                                 <option value="DNI">DNI</option>
                                 <option value="RUC">RUC</option>
                             </select>
-                            <input type="text" class="form-control" [placeholder]="'Ingresa ' + tipoDocumentoSeleccionado"
-                                   [(ngModel)]="dniBusqueda" (keyup.enter)="buscarCliente()"
-                                   [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11">
-                            <button class="btn btn-outline-primary" (click)="buscarCliente()" [disabled]="buscandoCliente">
-                                <i class="bi bi-search"></i>
+                            <input type="text" class="form-control"
+                                [placeholder]="'Ingresa ' + tipoDocumentoSeleccionado" [(ngModel)]="dniBusqueda"
+                                (keyup.enter)="buscarCliente()"
+                                [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11">
+
+                            <button type="button" class="btn btn-outline-primary" (click)="buscarCliente()"
+                                [disabled]="buscandoCliente">
+
+                                <span *ngIf="buscandoCliente" class="spinner-border spinner-border-sm">
+                                </span>
+
+                                <i *ngIf="!buscandoCliente" class="bi bi-search">
+                                </i>
+
+                                {{ buscandoCliente ? 'Consultando...' : 'Buscar' }}
                             </button>
+
                         </div>
                     </div>
 
@@ -124,15 +141,19 @@
                                     </td>
                                     <td style="width: 100px;">
                                         <div class="input-group input-group-sm">
-                                            <button class="btn btn-outline-secondary" (click)="cartService.actualizarCantidad(item.lote.idLote, -1)">-</button>
-                                            <input type="text" class="form-control text-center" [value]="item.cantidad" readonly>
-                                            <button class="btn btn-outline-secondary" (click)="cartService.actualizarCantidad(item.lote.idLote, 1)">+</button>
+                                            <button class="btn btn-outline-secondary"
+                                                (click)="cartService.actualizarCantidad(item.lote.idLote, -1)">-</button>
+                                            <input type="text" class="form-control text-center" [value]="item.cantidad"
+                                                readonly>
+                                            <button class="btn btn-outline-secondary"
+                                                (click)="cartService.actualizarCantidad(item.lote.idLote, 1)">+</button>
                                         </div>
                                     </td>
                                     <td>S/ {{ item.producto.precioVenta }}</td>
                                     <td class="fw-bold">S/ {{ item.producto.precioVenta * item.cantidad }}</td>
                                     <td class="text-end pe-3">
-                                        <button class="btn btn-sm btn-outline-danger" (click)="cartService.eliminarItem(item.lote.idLote)">
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            (click)="cartService.eliminarItem(item.lote.idLote)">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </td>
@@ -168,7 +189,7 @@
                         </div>
 
                         <button class="btn btn-success btn-lg w-100 fw-bold" (click)="registrarVenta()"
-                                [disabled]="cartService.getItems().length === 0 || !cajaAbierta">
+                            [disabled]="cartService.getItems().length === 0 || !cajaAbierta">
                             <i class="bi bi-check-circle me-2"></i> Cobrar Venta
                         </button>
                     </div>
@@ -190,7 +211,8 @@
 <div class="modal fade" id="modalTicket" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
 
-        <div class="modal-content border-0 shadow" id="ticket-impresion" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-content border-0 shadow" id="ticket-impresion"
+            style="max-height: 90vh; display: flex; flex-direction: column;">
 
             <div class="modal-header bg-success text-white d-print-none">
                 <h5 class="modal-title"><i class="bi bi-receipt me-2"></i>Ticket Generado</h5>
@@ -198,7 +220,8 @@
             </div>
 
             <!-- CUERPO DEL TICKET -->
-            <div class="modal-body p-4" style="overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #000;">
+            <div class="modal-body p-4"
+                style="overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #000;">
                 <ng-container *ngIf="ventaGenerada">
                     <div class="text-center mb-4">
                         <h4 class="fw-bold m-0">FARMACIA SAN MARTÍN S.A.C.</h4>
@@ -294,48 +317,138 @@
 
 
 <!-- MODAL: NUEVO CLIENTE -->
-<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+
+<!-- MODAL: NUEVO CLIENTE -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-labelledby="tituloNuevoCliente" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+
         <div class="modal-content border-0 shadow">
+
+            <!-- ENCABEZADO -->
             <div class="modal-header bg-sanmartin-primary text-white">
-                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Cliente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold" id="tituloNuevoCliente">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Registrar Nuevo Cliente
+                </h5>
+
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar">
+                </button>
             </div>
+
+            <!-- CUERPO DEL FORMULARIO -->
             <div class="modal-body p-4">
-                <div class="row mb-3">
+
+                <!-- Documento -->
+                <div class="row g-3 mb-3">
+
                     <div class="col-md-4">
-                        <label class="form-label fw-bold">Tipo Doc.</label>
+                        <label class="form-label fw-bold">
+                            Tipo Doc.
+                        </label>
+
                         <select class="form-select" [(ngModel)]="tipoDocumentoSeleccionado">
                             <option value="DNI">DNI</option>
                             <option value="RUC">RUC</option>
                         </select>
                     </div>
+
                     <div class="col-md-8">
-                        <label class="form-label fw-bold">Número de Documento</label>
-                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.numeroDocumento"
-                            [maxlength]="tipoDocumentoSeleccionado === 'DNI' ? 8 : 11" readonly>
+                        <label class="form-label fw-bold">
+                            Número de Documento
+                        </label>
+
+                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.numeroDocumento" readonly>
                     </div>
+
                 </div>
+
+                <!-- Nombre -->
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Nombre Completo / Razón Social</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoCliente.nombre" placeholder="Ej: Juan Pérez">
+                    <label class="form-label fw-bold">
+                        Nombre Completo / Razón Social
+                    </label>
+
+                    <input type="text" class="form-control" [(ngModel)]="nuevoCliente.nombre"
+                        placeholder="Nombre completo o razón social" required>
                 </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Teléfono <small class="text-muted">(Opcional)</small></label>
-                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.telefono" placeholder="Ej: 999888777">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Dirección <small class="text-muted">(Opcional)</small></label>
-                        <input type="text" class="form-control" [(ngModel)]="nuevoCliente.direccion" placeholder="Ej: Av. Los Álamos 123">
-                    </div>
+
+
+                    <!-- Sexo -->
+                    <div class="mb-3" *ngIf="tipoDocumentoSeleccionado === 'DNI'">
+                        <label class="form-label fw-bold">
+                            Sexo <small class="text-muted">(Opcional)</small>
+                        </label>
+
+                        <div class="d-flex flex-wrap gap-4 mt-2">
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="sexoMasculino" name="sexoCliente"
+                                    value="MASCULINO" [(ngModel)]="nuevoCliente.sexo">
+
+                                <label class="form-check-label" for="sexoMasculino">
+                                    Masculino
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" id="sexoFemenino" name="sexoCliente"
+                                    value="FEMENINO" [(ngModel)]="nuevoCliente.sexo">
+
+                                <label class="form-check-label" for="sexoFemenino">
+                                    Femenino
+                                </label>
+                            </div>
+
+                        </div>
+                   
+
                 </div>
+
+
+                <!-- Teléfono -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        Teléfono
+                        <small class="text-muted">(Opcional)</small>
+                    </label>
+
+                    <input type="text" class="form-control" [(ngModel)]="nuevoCliente.telefono"
+                        placeholder="Ej: 999888777" maxlength="9">
+                </div>
+
+                <!-- Dirección -->
+                <div class="mb-2">
+                    <label class="form-label fw-bold">
+                        Dirección
+                        <small class="text-muted">(Opcional)</small>
+                    </label>
+
+                    <input type="text" class="form-control" [(ngModel)]="nuevoCliente.direccion"
+                        placeholder="Dirección del cliente">
+                </div>
+
             </div>
+
+            <!-- PIE DEL MODAL -->
             <div class="modal-footer bg-light">
-                <button type="button" id="btnCerrarModalCliente" class="d-none" data-bs-dismiss="modal"></button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-sanmartin" (click)="guardarNuevoCliente()">Guardar Cliente</button>
+
+                <button type="button" id="btnCerrarModalCliente" class="d-none" data-bs-dismiss="modal">
+                </button>
+
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+
+                <button type="button" class="btn btn-sanmartin" (click)="guardarNuevoCliente()"
+                    [disabled]="!nuevoCliente.nombre.trim()">
+
+                    <i class="bi bi-check-circle me-1"></i>
+                    Guardar Cliente
+                </button>
+
             </div>
+
         </div>
     </div>
 </div>

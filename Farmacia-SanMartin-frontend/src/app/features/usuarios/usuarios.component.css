@@ -591,5 +591,56 @@ tbody tr:hover {
   transform: translateY(-1px);
 }
 
+
+/* Consulta DNI */
+
+.dni-contenedor {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dni-contenedor input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-consultar-dni {
+  background: #008f83;
+  border: none;
+  border-radius: 8px;
+  padding: 0 14px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-consultar-dni:hover:not(:disabled) {
+  background: #006f67;
+}
+
+.btn-consultar-dni:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mensaje-consulta-dni {
+  font-size: 12px;
+  color: #16834b;
+}
+
+@media (max-width: 480px) {
+  .dni-contenedor {
+    flex-direction: column;
+  }
+
+  .btn-consultar-dni {
+    padding: 12px;
+  }
+}
+
    
 }

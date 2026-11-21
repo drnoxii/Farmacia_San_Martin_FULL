@@ -59,4 +59,14 @@ public class PersonaController {
         personaService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/consultar")
+    @Operation(summary = "Consultar DNI en MySQL o Factiliza")
+    public ResponseEntity<PersonaDTO> consultarDni(
+            @Valid @RequestBody PersonaDTO.ConsultaDni request) {
+
+        return ResponseEntity.ok(
+                personaService.obtenerOPersistirPorDni(
+                        request.numeroDocumento()));
+    }
 }

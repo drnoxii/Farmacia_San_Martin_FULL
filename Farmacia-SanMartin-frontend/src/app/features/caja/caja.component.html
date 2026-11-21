@@ -323,7 +323,7 @@
           <tr *ngIf="historial.length === 0">
             <td colspan="7" class="text-center py-4 text-muted">Aún no hay cajas registradas.</td>
           </tr>
-          <tr *ngFor="let h of historialOrdenado">
+          <tr *ngFor="let h of historialOrdenado">                                         
             <td class="ps-4">{{ h.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</td>
             <td>{{ h.fechaCierre ? (h.fechaCierre | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
             <td class="text-end">S/ {{ h.montoInicial | number:'1.2-2' }}</td>

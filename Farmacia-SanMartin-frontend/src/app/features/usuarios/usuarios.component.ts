@@ -37,6 +37,19 @@ interface RegistroUsuario {
   rol: string;
 }
 
+
+interface PersonaConsulta {
+  idPersona: number;
+  numeroDocumento: string;
+  nombre: string;
+  apellidoPaterno: string | null;
+  apellidoMaterno: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  sexo: string | null;
+}
+
+
 // =====================================
 // INTERFAZ DE EDICIÓN
 // =====================================
@@ -107,6 +120,14 @@ export class UsuariosComponent implements OnInit {
 
   nuevoUsuario: RegistroUsuario = this.formularioVacio();
 
+  consultandoDni = false;
+  dniConsultado = '';
+  mensajeConsultaDni = '';
+
+  private readonly consultaDniUrl = '/api/personas/consultar';
+
+
+
   // =====================================
   // FORMULARIO DE EDICIÓN
   // =====================================
@@ -163,6 +184,8 @@ export class UsuariosComponent implements OnInit {
 
   abrirFormulario(): void {
     this.nuevoUsuario = this.formularioVacio();
+    this.dniConsultado = '';
+    this.mensajeConsultaDni = '';
     this.mostrarFormulario = true;
   }
 
@@ -173,6 +196,8 @@ export class UsuariosComponent implements OnInit {
   cerrarFormulario(): void {
     this.mostrarFormulario = false;
     this.nuevoUsuario = this.formularioVacio();
+    this.dniConsultado = '';
+    this.mensajeConsultaDni = '';
   }
 
   // =====================================
@@ -545,6 +570,87 @@ export class UsuariosComponent implements OnInit {
       }
     });
   }
+
+
+  consultarDni(): void {
+    const dni = this.nuevoUsuario.numeroDocumento.trim();
+
+    if (!/^\d{8}$/.test(dni)) {
+      this.alert.error('Ingresa un DNI válido de 8 dígitos.');
+      return;
+    }
+
+    if (this.consultandoDni) return;
+
+    this.consultandoDni = true;
+    this.mensajeConsultaDni = '';
+
+    this.http.post<PersonaConsulta>(
+      this.consultaDniUrl,
+      { numeroDocumento: dni }
+    ).subscribe({
+
+      next: (persona) => {
+        this.consultandoDni = false;
+
+        // Evitar llenar el formulario con una búsqueda anterior.
+        if (!this.mostrarFormulario ||
+          this.nuevoUsuario.numeroDocumento !== dni) {
+          return;
+        }
+
+        const nombreCompleto = [
+          persona.nombre,
+          persona.apellidoPaterno ?? '',
+          persona.apellidoMaterno ?? ''
+        ]
+          .filter(parte => parte.trim().length > 0)
+          .join(' ');
+
+        this.nuevoUsuario.nombre = nombreCompleto;
+        this.nuevoUsuario.direccion = persona.direccion ?? '';
+
+        this.dniConsultado = dni;
+        this.mensajeConsultaDni = 'Datos encontrados correctamente.';
+
+        this.alert.toast(
+          'Datos del DNI cargados correctamente.',
+          'success'
+        );
+      },
+
+      error: (err) => {
+        this.consultandoDni = false;
+
+        if (!this.mostrarFormulario ||
+          this.nuevoUsuario.numeroDocumento !== dni) {
+          return;
+        }
+
+        console.error('Error al consultar DNI:', err);
+
+        this.alert.error(
+          err.error?.detail ||
+          err.error?.message ||
+          'No se pudo consultar el DNI. Puedes ingresar los datos manualmente.'
+        );
+      }
+    });
+  }
+
+  // Evita conservar datos de otra persona si cambias el DNI.
+  cambiarDni(): void {
+    if (this.dniConsultado &&
+      this.nuevoUsuario.numeroDocumento !== this.dniConsultado) {
+      this.nuevoUsuario.nombre = '';
+      this.nuevoUsuario.direccion = '';
+    }
+
+    this.dniConsultado = '';
+    this.mensajeConsultaDni = '';
+  }
+
+
 
   // =====================================
   // LIMPIAR MENSAJES

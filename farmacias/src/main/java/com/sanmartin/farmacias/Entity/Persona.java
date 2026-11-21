@@ -9,31 +9,41 @@ public class Persona {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idPersona;
 
-    @Enumerated(EnumType.STRING)
-    @Column(
-            name = "tipoDocumento",
-            length = 3,
-            columnDefinition = "CHAR(3)"
-    )
-    private TipoDocumento tipoDocumento;
 
-    @Column(nullable = false, length = 150)
-    private String nombre;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipoDocumento", length = 3)
+    private TipoDocumento tipoDocumento;
 
     @Column(name = "numeroDocumento", length = 11, unique = true)
     private String numeroDocumento;
 
+    @Column(nullable = false, length = 150)
+    private String nombre;
+
+    @Column(length = 100)
+    private String apellidoPaterno;
+
+    @Column(length = 100)
+    private String apellidoMaterno;
+
     private String telefono;
+
     private String direccion;
+
+    @Column(name = "sexo", length = 10)
+    private String sexo;
+
 
     public Persona() {
     }
 
-    public Persona(Long idPersona, TipoDocumento tipoDocumento, String nombre, String numeroDocumento, String telefono, String direccion) {
+    public Persona(Long idPersona, TipoDocumento tipoDocumento, String numeroDocumento, String nombre, String apellidoPaterno, String apellidoMaterno, String telefono, String direccion) {
         this.idPersona = idPersona;
         this.tipoDocumento = tipoDocumento;
-        this.nombre = nombre;
         this.numeroDocumento = numeroDocumento;
+        this.nombre = nombre;
+        this.apellidoPaterno = apellidoPaterno;
+        this.apellidoMaterno = apellidoMaterno;
         this.telefono = telefono;
         this.direccion = direccion;
     }
@@ -54,6 +64,14 @@ public class Persona {
         this.tipoDocumento = tipoDocumento;
     }
 
+    public String getNumeroDocumento() {
+        return numeroDocumento;
+    }
+
+    public void setNumeroDocumento(String numeroDocumento) {
+        this.numeroDocumento = numeroDocumento;
+    }
+
     public String getNombre() {
         return nombre;
     }
@@ -62,12 +80,20 @@ public class Persona {
         this.nombre = nombre;
     }
 
-    public String getNumeroDocumento() {
-        return numeroDocumento;
+    public String getApellidoPaterno() {
+        return apellidoPaterno;
     }
 
-    public void setNumeroDocumento(String numeroDocumento) {
-        this.numeroDocumento = numeroDocumento;
+    public void setApellidoPaterno(String apellidoPaterno) {
+        this.apellidoPaterno = apellidoPaterno;
+    }
+
+    public String getApellidoMaterno() {
+        return apellidoMaterno;
+    }
+
+    public void setApellidoMaterno(String apellidoMaterno) {
+        this.apellidoMaterno = apellidoMaterno;
     }
 
     public String getTelefono() {
@@ -84,5 +110,13 @@ public class Persona {
 
     public void setDireccion(String direccion) {
         this.direccion = direccion;
+    }
+
+    public String getSexo() {
+        return sexo;
+    }
+
+    public void setSexo(String sexo) {
+        this.sexo = sexo;
     }
 }

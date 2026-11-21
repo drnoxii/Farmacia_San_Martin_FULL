@@ -16,5 +16,7 @@ public interface IPersonaServices {
     PersonaDTO actualizar(Long id, PersonaDTO dto);
 
     void eliminar(Long id);
+
+    PersonaDTO obtenerOPersistirPorDni(String dni);
 }
 

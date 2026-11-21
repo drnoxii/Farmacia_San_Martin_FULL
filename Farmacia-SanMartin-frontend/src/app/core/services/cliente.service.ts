@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Cliente } from '../interfaces/cliente.interface';
+import { Cliente, PersonaConsultaDni } from '../interfaces/cliente.interface';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
@@ -18,6 +18,15 @@ export class ClienteService {
   crearCliente(cliente: Cliente): Observable<Cliente> {
     return this.http.post<Cliente>(this.apiUrl, cliente);
   }
+
+
+consultarDni(dni: string): Observable<PersonaConsultaDni> {
+  return this.http.post<PersonaConsultaDni>(
+    '/api/personas/consultar',
+    { numeroDocumento: dni }
+  );
+}
+
 
    
 

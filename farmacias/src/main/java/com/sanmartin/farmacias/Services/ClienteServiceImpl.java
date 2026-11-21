@@ -6,6 +6,7 @@ import com.sanmartin.farmacias.Entity.Persona;
 import com.sanmartin.farmacias.Repository.ClienteRepository;
 import com.sanmartin.farmacias.Repository.PersonaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,30 +40,48 @@ public class ClienteServiceImpl implements IClienteService{
                 .map(this::toDto);
     }
 
+
     @Override
+    @Transactional
     public ClienteDTO registrar(ClienteDTO dto) {
-        //  Si ya existe una persona con ese documento, reutilizarla
-        Persona persona = personaRepository.findByNumeroDocumento(dto.numeroDocumento())
+
+        // 1. Verificar que no exista un cliente con ese documento
+        clienteRepository.findByPersonaNumeroDocumento(dto.numeroDocumento())
+                .ifPresent(c -> {
+                    throw new RuntimeException(
+                            "Ya existe un cliente con ese documento"
+                    );
+                });
+
+        // 2. Buscar la persona en Oracle
+        // Si Factiliza ya la registró, reutilizarla
+        Persona persona = personaRepository
+                .findByNumeroDocumento(dto.numeroDocumento())
                 .orElseGet(() -> {
+
                     Persona p = new Persona();
+
                     p.setNumeroDocumento(dto.numeroDocumento());
                     p.setNombre(dto.nombre());
                     p.setTelefono(dto.telefono());
                     p.setDireccion(dto.direccion());
+
                     return personaRepository.save(p);
                 });
 
-        //  Verificar que esa persona no sea ya cliente
-        clienteRepository.findByPersonaNumeroDocumento(dto.numeroDocumento())
-                .ifPresent(c -> {
-                    throw new RuntimeException("Ya existe un cliente con ese documento");
-                });
+        // 3. Guardar el sexo seleccionado manualmente
+        if (dto.sexo() != null && !dto.sexo().isBlank()) {
+            persona.setSexo(dto.sexo());
+            personaRepository.save(persona);
+        }
 
+        // 4. Registrar al cliente utilizando esa persona
         Cliente cliente = new Cliente();
         cliente.setPersona(persona);
 
         return toDto(clienteRepository.save(cliente));
     }
+
 
     private ClienteDTO toDto(Cliente c) {
         Persona p = c.getPersona();
@@ -71,7 +90,8 @@ public class ClienteServiceImpl implements IClienteService{
                 p.getNumeroDocumento(),
                 p.getNombre(),
                 p.getTelefono(),
-                p.getDireccion()
+                p.getDireccion(),
+                p.getSexo()
         );
     }
 }

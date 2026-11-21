@@ -4,8 +4,8 @@ spring:
   datasource:
 
     url: jdbc:oracle:thin:@localhost:1521/xe
-    username: LP2
-    password: 123
+    username: san_martin
+    password: admin123
     driver-class-name: oracle.jdbc.OracleDriver
 
   jpa:
@@ -16,3 +16,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.OracleDialect
         format_sql: true
+
+reniec:
+  api:
+    url: https://api.factiliza.com/v1/dni/info
+    token: ${RENIEC_TOKEN:}

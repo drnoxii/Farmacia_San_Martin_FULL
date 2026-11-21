@@ -2,6 +2,7 @@ package com.sanmartin.farmacias.Dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "Datos del cliente")
@@ -25,7 +26,14 @@ public record ClienteDTO(
 
         @Schema(description = "Dirección", example = "Av. Lima 123")
         @Size(max = 250)
-        String direccion
+        String direccion,
+
+        @Schema(description = "Sexo de la persona")
+        @Pattern(
+                regexp = "MASCULINO|FEMENINO",
+                message = "El sexo debe ser MASCULINO o FEMENINO"
+        )
+                String sexo
 
 ) {
 }
