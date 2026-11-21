@@ -21,3 +21,9 @@ reniec:
   api:
     url: https://api.factiliza.com/v1/dni/info
     token: ${RENIEC_TOKEN:}
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration-ms: 14400000

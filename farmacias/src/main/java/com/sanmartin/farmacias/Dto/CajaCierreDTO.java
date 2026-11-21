@@ -11,16 +11,19 @@ import java.math.BigDecimal;
 @Schema(description = "Datos para cerrar una caja")
 public record CajaCierreDTO(
 
-        @NotNull(message = "El usuario es obligatorio")
-        Long idUsuario,
-
         @NotNull(message = "El efectivo contado es obligatorio")
-        @DecimalMin(value = "0.0", message = "El efectivo no puede ser negativo")
+        @DecimalMin(
+                value = "0.0",
+                message = "El efectivo no puede ser negativo"
+        )
         @Digits(integer = 8, fraction = 2)
         BigDecimal montoContado,
 
         @NotNull(message = "El monto digital verificado es obligatorio")
-        @DecimalMin(value = "0.0", message = "El monto digital no puede ser negativo")
+        @DecimalMin(
+                value = "0.0",
+                message = "El monto digital no puede ser negativo"
+        )
         @Digits(integer = 8, fraction = 2)
         BigDecimal montoDigitalVerificado,
 

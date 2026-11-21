@@ -3,6 +3,7 @@ package com.sanmartin.farmacias.Controller;
 import com.sanmartin.farmacias.Dto.LaboratorioDto;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.ILaboratorioServices;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.List;
         name = "Laboratorio",
         description = "CRUD de laboratorios"
 )
+@SecurityRequirement(name = "BearerAuth")
 public class LaboratorioController {
 
     private final ILaboratorioServices laboratorioServices;

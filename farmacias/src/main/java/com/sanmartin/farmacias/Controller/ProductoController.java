@@ -6,6 +6,7 @@ import com.sanmartin.farmacias.Entity.EstadoGeneral;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.IProductoServices;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping({"/api/v1/producto"})
 @Tag(name = "Productos", description = "CRUD de Productos")
+@SecurityRequirement(name = "BearerAuth")
 public class ProductoController {
     private final IProductoServices productoServices;
 
@@ -85,6 +87,7 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{id}")
+    @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "Se elimina el producto con el ID dado")
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id){
         if (productoServices.eliminarProducto(id)){

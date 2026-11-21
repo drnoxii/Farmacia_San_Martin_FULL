@@ -7,13 +7,17 @@ import com.sanmartin.farmacias.Dto.DevolucionVentaResponseDTO;
 import com.sanmartin.farmacias.Services.DevolucionVentaService;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.IVentaService;
+import com.sanmartin.farmacias.security.UsuarioPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ventas")
 @Tag(name = "Ventas", description = "Registro y consulta de ventas")
+@SecurityRequirement(name = "BearerAuth")
 public class VentaController {
 
     private final IVentaService ventaServices;
@@ -57,9 +62,20 @@ public class VentaController {
             @ApiResponse(responseCode = "400", description = "Datos inválidos o stock insuficiente"),
             @ApiResponse(responseCode = "404", description = "Caja, usuario, cliente o lote no encontrados")
     })
+    @PreAuthorize(
+            "hasRole('ADMIN') or " +
+                    "@accesoCaja.esPropietario(#dto.idCaja(), authentication)"
+    )
     public ResponseEntity<VentaResponseDTO> registrar(
-            @RequestBody @Valid VentaRequestDTO dto) {
-        return new ResponseEntity<>(ventaServices.registrar(dto), HttpStatus.CREATED);
+            @RequestBody @Valid VentaRequestDTO dto,
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
+
+        Long idUsuario = principal.usuario().getIdUsuario();
+
+        return new ResponseEntity<>(
+                ventaServices.registrar(dto, idUsuario),
+                HttpStatus.CREATED
+        );
     }
 
     @PostMapping("/{id}/devoluciones")

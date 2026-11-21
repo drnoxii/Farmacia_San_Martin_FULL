@@ -114,29 +114,34 @@ public class CajaServiceImpl implements ICajaService {
      *          no tenga otra abierta para evitar dinero repartido en dos cajas.
      */
     @Override
-    public CajaDTO abrir(CajaAperturaDTO dto) {
+    public CajaDTO abrir(CajaAperturaDTO dto, Long idUsuario) {
 
-        // 1. Regla de negocio: una sola caja abierta por usuario.
-        cajaRepository.findByUsuarioIdUsuarioAndEstado(dto.idUsuario(), EstadoCaja.ABIERTA)
-                .ifPresent(c -> {
-                    throw new RuntimeException("El usuario ya tiene una caja abierta");
-                });
+        // 1. Comprobar que no tenga otra caja abierta
+        cajaRepository.findByUsuarioIdUsuarioAndEstado(
+                idUsuario,
+                EstadoCaja.ABIERTA
+        ).ifPresent(c -> {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "El usuario ya tiene una caja abierta"
+            );
+        });
 
-        // 2. El usuario debe existir; si no, responde 404.
-        Usuario usuario = usuarioRepository.findById(dto.idUsuario())
+        // 2. Buscar al usuario autenticado
+        Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuario no encontrado con ID: " + dto.idUsuario()));
+                        "Usuario no encontrado con ID: " + idUsuario
+                ));
 
-        // 3. Crear la caja con estado ABIERTA y la hora actual.
+        // 3. Crear la caja
         Caja caja = new Caja();
         caja.setUsuario(usuario);
-        caja.setMontoInicial(dto.montoInicial());   // sencillo con el que arranca el cajón
+        caja.setMontoInicial(dto.montoInicial());
         caja.setEstado(EstadoCaja.ABIERTA);
         caja.setFechaApertura(LocalDateTime.now());
 
         return toDto(cajaRepository.save(caja));
     }
-
     /**
      * QUÉ HACE: cierra la caja guardando lo que el cajero contó y la diferencia.
      * POR QUÉ (corrección): antes la diferencia era "contado - montoInicial" e
@@ -146,7 +151,11 @@ public class CajaServiceImpl implements ICajaService {
      */
     @Override
     @Transactional
-    public CajaDTO cerrar(Long idCaja, CajaCierreDTO dto) {
+    public CajaDTO cerrar(
+            Long idCaja,
+            CajaCierreDTO dto,
+            Long idUsuario,
+            boolean esAdmin) {
 
         Caja caja = cajaRepository.findById(idCaja)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -161,12 +170,16 @@ public class CajaServiceImpl implements ICajaService {
         }
 
         // 3. Validar propietario
-        if (!caja.getUsuario().getIdUsuario().equals(dto.idUsuario())) {
+
+        if (!esAdmin &&
+                !caja.getUsuario().getIdUsuario().equals(idUsuario)) {
+
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "No puedes cerrar una caja que no es tuya"
             );
         }
+
 
         // 4. Obtener ventas de esta caja
         List<Venta> ventas = ventaRepository.findByCajaIdCaja(idCaja);

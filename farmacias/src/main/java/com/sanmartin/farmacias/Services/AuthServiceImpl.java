@@ -1,6 +1,7 @@
 package com.sanmartin.farmacias.Services;
 
 import com.sanmartin.farmacias.Dto.LoginDTO;
+import com.sanmartin.farmacias.Dto.LoginResponseDto;
 import com.sanmartin.farmacias.Dto.RegistroDTO;
 import com.sanmartin.farmacias.Dto.UsuarioDTO;
 import com.sanmartin.farmacias.Entity.EstadoGeneral;
@@ -8,8 +9,17 @@ import com.sanmartin.farmacias.Entity.Persona;
 import com.sanmartin.farmacias.Entity.Usuario;
 import com.sanmartin.farmacias.Repository.PersonaRepository;
 import com.sanmartin.farmacias.Repository.UsuarioRepository;
+import com.sanmartin.farmacias.security.JwtService;
+import com.sanmartin.farmacias.security.UsuarioPrincipal;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthServiceImpl implements IAuthService {
@@ -18,10 +28,15 @@ public class AuthServiceImpl implements IAuthService {
     private final PersonaRepository personaRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthServiceImpl(UsuarioRepository usuarioRepository, PersonaRepository personaRepository, PasswordEncoder passwordEncoder) {
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+
+    public AuthServiceImpl(UsuarioRepository usuarioRepository, PersonaRepository personaRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
         this.personaRepository = personaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -53,21 +68,50 @@ public class AuthServiceImpl implements IAuthService {
         return toDto(usuario);
     }
 
+
     @Override
-    public UsuarioDTO login(LoginDTO dto) {
-        Usuario usuario = usuarioRepository.findByCorreo(dto.correo())
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+    @Transactional(readOnly = true)
+    public LoginResponseDto login(LoginDTO dto) {
 
-        if (!passwordEncoder.matches(dto.password(), usuario.getPassword())) {
-            throw new RuntimeException("Credenciales inválidas");
+        // 1. Solicitar a Spring Security que autentique
+        Authentication autenticacion;
+
+        try {
+            autenticacion = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            dto.correo().trim(),
+                            dto.password()
+                    )
+            );
+        } catch (AuthenticationException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Credenciales incorrectas o usuario inactivo"
+            );
         }
 
-        if (usuario.getEstadoGeneral() == EstadoGeneral.INACTIVO) {
-            throw new RuntimeException("Usuario inactivo");
-        }
+        // 2. Obtener el usuario autenticado
+        UsuarioPrincipal principal =
+                (UsuarioPrincipal) autenticacion.getPrincipal();
 
-        return toDto(usuario);
+        // 3. Recuperar los datos del empleado desde Oracle
+        Usuario usuario = usuarioRepository
+                .findByCorreo(principal.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Usuario no disponible"
+                ));
+
+        // 4. Generar JWT solamente después de autenticar
+        String token = jwtService.generarToken(principal);
+
+        // 5. Devolver token y datos del empleado
+        return new LoginResponseDto(
+                token,
+                toDto(usuario)
+        );
     }
+
 
     private UsuarioDTO toDto(Usuario u) {
         Persona p = u.getPersona();

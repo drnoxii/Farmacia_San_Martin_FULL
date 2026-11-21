@@ -20,9 +20,14 @@ public interface ICajaService {
 
     List<CajaDTO> listarPorUsuario(Long idUsuario);
 
-    CajaDTO abrir(CajaAperturaDTO dto);
+    CajaDTO abrir(CajaAperturaDTO dto, Long idUsuario);
 
-    CajaDTO cerrar(Long idCaja, CajaCierreDTO dto);
+    CajaDTO cerrar(
+            Long idCaja,
+            CajaCierreDTO dto,
+            Long idUsuario,
+            boolean esAdmin
+    );
 
     Optional<CajaDTO> buscarCajaAbiertaPorUsuario(Long idUsuario);
 

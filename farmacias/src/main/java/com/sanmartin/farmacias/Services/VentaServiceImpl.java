@@ -8,8 +8,10 @@ import com.sanmartin.farmacias.Dto.VentaResponseDTO;
 import com.sanmartin.farmacias.Entity.*;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -50,7 +52,9 @@ public class VentaServiceImpl implements IVentaService{
     }
 
     @Override
-    public VentaResponseDTO registrar(VentaRequestDTO dto) {
+    public VentaResponseDTO registrar(
+            VentaRequestDTO dto,
+            Long idUsuario) {
         Caja caja = cajaRepository.findById(dto.idCaja())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Caja no encontrada con ID: " + dto.idCaja()));
@@ -60,9 +64,18 @@ public class VentaServiceImpl implements IVentaService{
         }
 
         // 2. Validar usuario
-        Usuario usuario = usuarioRepository.findById(dto.idUsuario())
+        Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Usuario no encontrado con ID: " + dto.idUsuario()));
+                        "Usuario no encontrado con ID: " + idUsuario));
+
+        if (!caja.getUsuario().getIdUsuario()
+                .equals(usuario.getIdUsuario())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "El usuario de la venta no corresponde al propietario de la caja"
+            );
+        }
 
         // 3. Validar cliente (opcional)
         Cliente cliente = null;

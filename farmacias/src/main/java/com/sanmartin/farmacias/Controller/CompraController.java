@@ -9,6 +9,7 @@ import com.sanmartin.farmacias.Services.ICompraService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/compras")
 @Tag(name = "Compras", description = "Registro y consulta de compras")
+@SecurityRequirement(name = "BearerAuth")
 public class CompraController {
 
     private final ICompraService compraService;

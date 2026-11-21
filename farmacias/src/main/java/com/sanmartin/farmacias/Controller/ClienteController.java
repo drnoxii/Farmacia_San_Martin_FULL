@@ -4,6 +4,7 @@ import com.sanmartin.farmacias.Dto.ClienteDTO;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.IClienteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/clientes")
 @Tag(name = "Clientes", description = "Registro y consulta de clientes")
+@SecurityRequirement(name = "BearerAuth")
 public class ClienteController {
 
     private final IClienteService clienteService;

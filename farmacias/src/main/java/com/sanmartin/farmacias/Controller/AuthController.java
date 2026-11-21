@@ -1,12 +1,14 @@
 package com.sanmartin.farmacias.Controller;
 
 import com.sanmartin.farmacias.Dto.LoginDTO;
+import com.sanmartin.farmacias.Dto.LoginResponseDto;
 import com.sanmartin.farmacias.Dto.RegistroDTO;
 import com.sanmartin.farmacias.Dto.UsuarioDTO;
 import com.sanmartin.farmacias.Services.IAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
+    @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "Registrar nuevo usuario (crea Persona + Usuario)")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuario registrado"),
@@ -37,13 +40,23 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(dto));
     }
 
+
     @PostMapping("/login")
-    @Operation(summary = "Iniciar sesión")
+    @Operation(summary = "Iniciar sesión y obtener JWT")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login exitoso"),
-            @ApiResponse(responseCode = "400", description = "Credenciales inválidas o usuario inactivo")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Autenticación exitosa"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Credenciales inválidas o cuenta inactiva"
+            )
     })
-    public ResponseEntity<UsuarioDTO> login(@Valid @RequestBody LoginDTO dto) {
+    public ResponseEntity<LoginResponseDto> login(
+            @Valid @RequestBody LoginDTO dto
+    ) {
         return ResponseEntity.ok(authService.login(dto));
     }
+
 }

@@ -19,9 +19,6 @@ public record VentaRequestDTO(
         @NotNull(message = "La caja es obligatoria")
         Long idCaja,
 
-        @Schema(description = "ID del usuario que vende", example = "1")
-        @NotNull(message = "El usuario es obligatorio")
-        Long idUsuario,
 
         @Schema(description = "Tipo de comprobante", example = "BOLETA")
         @NotNull(message = "El tipo de comprobante es obligatorio")

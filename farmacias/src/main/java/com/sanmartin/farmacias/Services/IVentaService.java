@@ -14,5 +14,5 @@ public interface IVentaService {
 
     Optional<VentaResponseDTO> buscarPorId(Long id);
 
-    VentaResponseDTO registrar(VentaRequestDTO dto);
+    VentaResponseDTO registrar(VentaRequestDTO dto, Long idUsuario);
 }

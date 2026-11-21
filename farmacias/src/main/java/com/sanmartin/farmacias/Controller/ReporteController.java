@@ -3,6 +3,7 @@ package com.sanmartin.farmacias.Controller;
 
 import com.sanmartin.farmacias.Services.ReporteService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/reportes")
+@SecurityRequirement(name = "BearerAuth")
 public class ReporteController {
 
     private final ReporteService reporteService;

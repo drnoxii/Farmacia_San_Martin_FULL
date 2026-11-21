@@ -7,7 +7,11 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "Datos del cliente")
 public record ClienteDTO(
-        @Schema(description = "ID del cliente", example = "1")
+        @Schema(
+                description = "ID generado automáticamente",
+                example = "1",
+                accessMode = Schema.AccessMode.READ_ONLY
+        )
         Long idCliente,
 
         @Schema(description = "DNI o RUC", example = "12345678")

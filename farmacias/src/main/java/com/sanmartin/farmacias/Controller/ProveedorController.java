@@ -3,6 +3,7 @@ package com.sanmartin.farmacias.Controller;
 import com.sanmartin.farmacias.Dto.ProveedorDto;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.IProveedorServices;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping({"/api/v1/proveedor"})
 @Tag(name = "Proveedor", description = "CRUD de los proveedores")
+@SecurityRequirement(name = "BearerAuth")
 public class ProveedorController {
     private final IProveedorServices proveedorServices;
 

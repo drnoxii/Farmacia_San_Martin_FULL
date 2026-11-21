@@ -5,6 +5,7 @@ import com.sanmartin.farmacias.Dto.LoteDTO;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Services.ILoteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/lotes")
 @Tag(name = "Lotes", description = "Consulta de lotes de productos")
+@SecurityRequirement(name = "BearerAuth")
 public class LoteController {
 
     private final ILoteService loteServices;
