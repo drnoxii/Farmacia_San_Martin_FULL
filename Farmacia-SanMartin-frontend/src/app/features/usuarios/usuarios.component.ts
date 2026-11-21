@@ -255,12 +255,6 @@ export class UsuariosComponent implements OnInit {
 
         this.filtrarUsuarios();
 
-        console.log('Usuarios recibidos:', this.usuarios);
-        console.log('Total de usuarios:', this.totalUsuarios);
-        console.log('Usuarios activos:', this.totalActivos);
-        console.log('Administradores:', this.totalAdministradores);
-        console.log('Cajeros:', this.totalCajeros);
-
         this.cargando = false;
       },
 

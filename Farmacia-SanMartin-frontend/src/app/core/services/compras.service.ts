@@ -34,8 +34,6 @@ export class ComprasService {
 
   //Crear una nueva compra
   crearCompra(compra: any): Observable<Compra> {
-    console.log('Formad Recibido. Create. Datos de la compra a enviar:');
-    console.log(compra);
     return this.http.post<Compra>(this.apiUrl, compra);
   }
 }

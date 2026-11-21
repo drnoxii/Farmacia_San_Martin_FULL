@@ -280,7 +280,6 @@ export class ComprasListComponent implements OnInit {
       }))
     };
 
-    console.log('JSON a enviar al backend:', compraData);
     this.guardando = true;
 
     this.compraService.crearCompra(compraData).subscribe({
@@ -321,8 +320,6 @@ export class ComprasListComponent implements OnInit {
       direccion: this.formProveedor.value.direccion,
       estado: 'ACTIVO' as const
     };
-
-    console.log('JSON a enviar al backend:', proveedorData);
 
     this.proveedorService.crearProveedor(proveedorData).subscribe({
       next: (proveedor) => {

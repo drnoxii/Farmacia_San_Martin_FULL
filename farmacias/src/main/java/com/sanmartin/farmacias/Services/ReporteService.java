@@ -32,13 +32,13 @@ public class ReporteService {
                V.TIPO_COMPROBANTE AS "tipoComprobante", V.METODO_PAGO AS "metodoPago",
                NVL(V.TOTAL, 0) AS "total", V.ESTADO AS "estado",
                NVL((SELECT SUM(D.CANTIDAD * D.PRECIO_UNITARIO)
-                    FROM SAN_MARTIN.DETALLE_VENTA D
+                    FROM DETALLE_VENTA D
                     WHERE D.ID_VENTA = V.ID_VENTA AND D.ESTADO = 'D'), 0) AS "totalDevuelto"
-        FROM SAN_MARTIN.VENTA V
-        LEFT JOIN SAN_MARTIN.CLIENTE C ON C.ID_CLIENTE = V.ID_CLIENTE
-        LEFT JOIN SAN_MARTIN.PERSONA PC ON PC.ID_PERSONA = C.ID_PERSONA
-        LEFT JOIN SAN_MARTIN.USUARIO U ON U.ID_USUARIO = V.ID_USUARIO
-        LEFT JOIN SAN_MARTIN.PERSONA PU ON PU.ID_PERSONA = U.ID_PERSONA
+        FROM VENTA V
+        LEFT JOIN CLIENTE C ON C.ID_CLIENTE = V.ID_CLIENTE
+        LEFT JOIN PERSONA PC ON PC.ID_PERSONA = C.ID_PERSONA
+        LEFT JOIN USUARIO U ON U.ID_USUARIO = V.ID_USUARIO
+        LEFT JOIN PERSONA PU ON PU.ID_PERSONA = U.ID_PERSONA
         WHERE V.FECHA_VENTA >= ? AND V.FECHA_VENTA < ?
         """;
 
@@ -115,17 +115,17 @@ public class ReporteService {
                 V.METODO_PAGO,
                 V.TOTAL,
                 NVL((SELECT SUM(D.CANTIDAD * D.PRECIO_UNITARIO)
-                     FROM SAN_MARTIN.DETALLE_VENTA D
+                     FROM DETALLE_VENTA D
                      WHERE D.ID_VENTA = V.ID_VENTA AND D.ESTADO = 'D'), 0) AS DEVUELTO,
                 V.ESTADO
-            FROM SAN_MARTIN.VENTA V
-            LEFT JOIN SAN_MARTIN.CLIENTE C
+            FROM VENTA V
+            LEFT JOIN CLIENTE C
                 ON V.ID_CLIENTE = C.ID_CLIENTE
-            LEFT JOIN SAN_MARTIN.PERSONA PC
+            LEFT JOIN PERSONA PC
                 ON C.ID_PERSONA = PC.ID_PERSONA
-            LEFT JOIN SAN_MARTIN.USUARIO U
+            LEFT JOIN USUARIO U
                 ON V.ID_USUARIO = U.ID_USUARIO
-            LEFT JOIN SAN_MARTIN.PERSONA PU
+            LEFT JOIN PERSONA PU
                 ON U.ID_PERSONA = PU.ID_PERSONA
             WHERE V.FECHA_VENTA >= ?
               AND V.FECHA_VENTA < ?
@@ -290,7 +290,7 @@ public class ReporteService {
                 (ConnectionCallback<Map<String, Object>>) conexion -> {
 
                     String llamada =
-                            "{call SAN_MARTIN.SP_RESUMEN_VENTAS(?, ?, ?, ?)}";
+                            "{call SP_RESUMEN_VENTAS(?, ?, ?, ?)}";
 
                     try (CallableStatement cs =
                                  conexion.prepareCall(llamada)) {
@@ -380,10 +380,10 @@ public class ReporteService {
                             ELSE 0
                         END
                     ), 0) AS STOCK_ACTUAL
-                FROM SAN_MARTIN.PRODUCTO P
-                LEFT JOIN SAN_MARTIN.CATEGORIA C
+                FROM PRODUCTO P
+                LEFT JOIN CATEGORIA C
                     ON P.ID_CATEGORIA = C.ID_CATEGORIA
-                LEFT JOIN SAN_MARTIN.LOTE L
+                LEFT JOIN LOTE L
                     ON P.ID_PRODUCTO = L.ID_PRODUCTO
                 GROUP BY
                     P.CODIGO,
@@ -414,8 +414,8 @@ public class ReporteService {
                 L.STOCK_LOTE AS "stock",
                 TRUNC(L.FECHA_VENCIMIENTO)
                   - TRUNC(SYSDATE) AS "diasRestantes"
-            FROM SAN_MARTIN.LOTE L
-            JOIN SAN_MARTIN.PRODUCTO P
+            FROM LOTE L
+            JOIN PRODUCTO P
                 ON L.ID_PRODUCTO = P.ID_PRODUCTO
             WHERE L.STOCK_LOTE > 0
               AND L.ESTADO = 'ACTIVO'
@@ -443,8 +443,8 @@ public class ReporteService {
                 L.STOCK_LOTE AS "stock",
                 TRUNC(L.FECHA_VENCIMIENTO)
                   - TRUNC(SYSDATE) AS "diasRestantes"
-            FROM SAN_MARTIN.LOTE L
-            JOIN SAN_MARTIN.PRODUCTO P
+            FROM LOTE L
+            JOIN PRODUCTO P
                 ON L.ID_PRODUCTO = P.ID_PRODUCTO
             WHERE L.STOCK_LOTE > 0
               AND L.FECHA_VENCIMIENTO < TRUNC(SYSDATE)
@@ -515,12 +515,12 @@ public class ReporteService {
 
                 C.DIFERENCIA AS "diferencia"
 
-            FROM SAN_MARTIN.CAJA C
+            FROM CAJA C
 
-            LEFT JOIN SAN_MARTIN.USUARIO U
+            LEFT JOIN USUARIO U
                 ON C.ID_USUARIO = U.ID_USUARIO
 
-            LEFT JOIN SAN_MARTIN.PERSONA P
+            LEFT JOIN PERSONA P
                 ON U.ID_PERSONA = P.ID_PERSONA
 
             LEFT JOIN (
@@ -536,10 +536,10 @@ public class ReporteService {
                         END
                     ) AS VENTAS_EFECTIVO
 
-                FROM SAN_MARTIN.VENTA VT
+                FROM VENTA VT
                 LEFT JOIN (
                     SELECT ID_VENTA, SUM(CANTIDAD * PRECIO_UNITARIO) AS DEVUELTO
-                    FROM SAN_MARTIN.DETALLE_VENTA WHERE ESTADO = 'D'
+                    FROM DETALLE_VENTA WHERE ESTADO = 'D'
                     GROUP BY ID_VENTA
                 ) DV ON DV.ID_VENTA = VT.ID_VENTA
                 GROUP BY ID_CAJA

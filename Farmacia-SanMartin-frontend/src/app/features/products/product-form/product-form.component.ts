@@ -79,7 +79,6 @@ export class ProductFormComponent implements OnInit {
 
   guardar() {
     if (this.form.invalid) {
-  console.log('Formulario inválido');
 
   Object.keys(this.form.controls).forEach(campo => {
     const control = this.form.get(campo);
