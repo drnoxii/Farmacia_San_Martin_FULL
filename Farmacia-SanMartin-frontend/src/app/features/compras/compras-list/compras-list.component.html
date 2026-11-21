@@ -509,12 +509,21 @@
 
         <div class="mb-2">
           <label for="nuevoEstadoCompra" class="form-label fw-bold">Nuevo estado</label>
-          <select id="nuevoEstadoCompra" class="form-select" [(ngModel)]="nuevoEstadoSeleccionado">
-            <option value="PENDIENTE">PENDIENTE</option>
+          <select id="nuevoEstadoCompra" class="form-select" [(ngModel)]="nuevoEstadoSeleccionado" [disabled]="compra.estado === 'ANULADA'">
+            <option value="PENDIENTE" [disabled]="compra.estado === 'RECIBIDA'">PENDIENTE</option>
             <option value="RECIBIDA">RECIBIDA</option>
             <option value="ANULADA">ANULADA</option>
           </select>
-          <small class="text-muted">Estado actual: <strong>{{ compra.estado || '—' }}</strong></small>
+          <small class="text-muted d-block mt-1">Estado actual: <strong>{{ compra.estado || '—' }}</strong></small>
+          <div *ngIf="compra.estado === 'ANULADA'" class="alert alert-secondary py-2 mt-2 mb-0 small">
+            <i class="bi bi-info-circle me-1"></i> Esta compra está <strong>ANULADA</strong> y su estado ya no puede ser modificado.
+          </div>
+          <div *ngIf="compra.estado === 'PENDIENTE' && nuevoEstadoSeleccionado === 'RECIBIDA'" class="alert alert-success py-2 mt-2 mb-0 small">
+            <i class="bi bi-box-arrow-in-down me-1"></i> Al pasar a <strong>RECIBIDA</strong> se sumarán las cantidades compradas al stock disponible.
+          </div>
+          <div *ngIf="compra.estado === 'RECIBIDA' && nuevoEstadoSeleccionado === 'ANULADA'" class="alert alert-warning py-2 mt-2 mb-0 small">
+            <i class="bi bi-exclamation-triangle me-1"></i> Al pasar a <strong>ANULADA</strong> se restará del stock la cantidad ingresada.
+          </div>
         </div>
       </div>
       <ng-template #sinCompraParaEstado>
@@ -523,7 +532,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" (click)="actualizarEstado()"
-          [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === compraSeleccionada?.estado || cargando">
+          [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === compraSeleccionada?.estado || compraSeleccionada?.estado === 'ANULADA' || cargando">
           <span *ngIf="cargando" class="spinner-border spinner-border-sm me-1" role="status"></span>
           <i *ngIf="!cargando" class="bi bi-check-circle me-1"></i>Cambiar
         </button>

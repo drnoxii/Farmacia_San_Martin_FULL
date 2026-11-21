@@ -34,7 +34,7 @@ public class Compra {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
-    private EstadoCompra estado = EstadoCompra.RECIBIDA;
+    private EstadoCompra estado = EstadoCompra.PENDIENTE;
 
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleCompra> detalles = new ArrayList<>();
