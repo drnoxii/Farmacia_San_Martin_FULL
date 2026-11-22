@@ -78,12 +78,25 @@ public class VentaController {
         );
     }
 
+
+
     @PostMapping("/{id}/devoluciones")
-    @Operation(summary = "Anular detalles de venta y devolver sus cantidades al lote original")
-    public ResponseEntity<DevolucionVentaResponseDTO> devolver(@PathVariable Long id,
-            @RequestBody @Valid DevolucionVentaRequestDTO dto) {
-        return ResponseEntity.ok(devoluciones.devolver(id, dto));
+    @Operation(
+            summary = "Devolver detalles de una venta y registrar el motivo"
+    )
+    public ResponseEntity<DevolucionVentaResponseDTO> devolver(
+            @PathVariable Long id,
+            @RequestBody @Valid DevolucionVentaRequestDTO dto,
+            @AuthenticationPrincipal UsuarioPrincipal principal) {
+
+        Long idUsuario = principal.usuario().getIdUsuario();
+
+        return ResponseEntity.ok(
+                devoluciones.devolver(id, dto, idUsuario)
+        );
     }
+
+
 
     public ResponseEntity<VentaResponseDTO> obtenerComprobante(@PathVariable Long id){
         return ventaServices.buscarPorId(id).map(ResponseEntity::ok)

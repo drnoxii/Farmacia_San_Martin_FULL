@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class VentaServiceImpl implements IVentaService{
@@ -27,16 +27,17 @@ public class VentaServiceImpl implements IVentaService{
     private final CajaRepository cajaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ClienteRepository clienteRepository;
+    private final MovimientoInventarioProcedure movimientoProcedure;
 
-    public VentaServiceImpl(VentaRepository ventaRepository, DetalleVentaRepository detalleVentaRepository, LoteRepository loteRepository, CajaRepository cajaRepository, UsuarioRepository usuarioRepository, ClienteRepository clienteRepository) {
+    public VentaServiceImpl(VentaRepository ventaRepository, DetalleVentaRepository detalleVentaRepository, LoteRepository loteRepository, CajaRepository cajaRepository, UsuarioRepository usuarioRepository, ClienteRepository clienteRepository, MovimientoInventarioProcedure movimientoProcedure) {
         this.ventaRepository = ventaRepository;
         this.detalleVentaRepository = detalleVentaRepository;
         this.loteRepository = loteRepository;
         this.cajaRepository = cajaRepository;
         this.usuarioRepository = usuarioRepository;
         this.clienteRepository = clienteRepository;
+        this.movimientoProcedure = movimientoProcedure;
     }
-
 
     @Override
     public List<VentaResponseDTO> listarTodo() {
@@ -52,6 +53,7 @@ public class VentaServiceImpl implements IVentaService{
     }
 
     @Override
+    @Transactional
     public VentaResponseDTO registrar(
             VentaRequestDTO dto,
             Long idUsuario) {
@@ -86,31 +88,100 @@ public class VentaServiceImpl implements IVentaService{
         }
 
         // 4. Calcular total y validar stock
+
         BigDecimal total = BigDecimal.ZERO;
-        for (DetalleVentaRequestDTO d : dto.detalles()) {
 
-            Lote lote = loteRepository.findById(d.idLote())
+        Set<Long> lotesEnVenta = new HashSet<>();
+
+// Ordenar los lotes por ID para adquirir
+// los bloqueos siempre en el mismo orden.
+        List<DetalleVentaRequestDTO> detallesOrdenados =
+                dto.detalles().stream()
+                        .sorted(Comparator.comparing(
+                                DetalleVentaRequestDTO::idLote
+                        ))
+                        .toList();
+
+        for (DetalleVentaRequestDTO d : detallesOrdenados) {
+
+
+            // NUEVO: impedir lotes repetidos
+            if (!lotesEnVenta.add(d.idLote())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "El lote con ID " + d.idLote() +
+                                " está repetido en la venta. " +
+                                "Debes agruparlo en un solo detalle."
+                );
+            }
+
+
+            // Validar que la cantidad sea un entero positivo
+            try {
+                if (d.cantidad() == null ||
+                        d.cantidad().intValueExact() <= 0) {
+
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "La cantidad debe ser mayor a cero"
+                    );
+                }
+            } catch (ArithmeticException e) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "La cantidad debe ser un número entero positivo"
+                );
+            }
+
+
+
+            Lote lote = loteRepository
+                    .buscarPorIdConBloqueo(d.idLote())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Lote no encontrado con ID: " + d.idLote()));
+                            "Lote no encontrado con ID: " + d.idLote()
+                    ));
 
+
+            // 1. Validar estado del lote
             if (lote.getEstado() != EstadoLote.ACTIVO) {
                 throw new RuntimeException(
                         "El lote " + lote.getNumeroLote() + " no está activo");
             }
 
-
-            BigDecimal stockDisponible = BigDecimal.valueOf(lote.getStockLote());
-            if (stockDisponible.compareTo(d.cantidad()) < 0) {
-                throw new RuntimeException(
-                        "Stock insuficiente en el lote " + lote.getNumeroLote() +
-                                ". Disponible: " + lote.getStockLote() +
-                                ", solicitado: " + d.cantidad());
+            // 2. NUEVO: validar fecha de vencimiento
+            if (lote.getFechaVencimiento().isBefore(LocalDate.now())) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "No se puede vender el lote " +
+                                lote.getNumeroLote() +
+                                " porque venció el " +
+                                lote.getFechaVencimiento()
+                );
             }
 
-            BigDecimal precioUnitario = lote.getProducto().getPrecioVenta();
-            BigDecimal subtotal = precioUnitario.multiply(d.cantidad());
+            // 3. Validar stock disponible
+            BigDecimal stockDisponible =
+                    BigDecimal.valueOf(lote.getStockLote());
+
+            if (stockDisponible.compareTo(d.cantidad()) < 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Stock insuficiente en el lote " +
+                                lote.getNumeroLote() +
+                                ". Disponible: " + lote.getStockLote() +
+                                ", solicitado: " + d.cantidad()
+                );
+            }
+
+            BigDecimal precioUnitario =
+                    lote.getProducto().getPrecioVenta();
+
+            BigDecimal subtotal =
+                    precioUnitario.multiply(d.cantidad());
+
             total = total.add(subtotal);
         }
+
 
         // 5. Crear Venta
         Venta venta = new Venta();
@@ -143,15 +214,41 @@ public class VentaServiceImpl implements IVentaService{
             detalleVentaRepository.save(detalle);
 
             // Descontar stock del lote (Integer - BigDecimal)
-            BigDecimal nuevoStock = BigDecimal.valueOf(lote.getStockLote())
-                    .subtract(d.cantidad());
-            lote.setStockLote(nuevoStock.intValue());
 
-            if (lote.getStockLote() == 0) {
+            int stockAnterior = lote.getStockLote();
+
+            // Cantidad ya validada como entero positivo
+            int cantidadEntera = d.cantidad().intValueExact();
+
+            // Calcular nuevo stock
+            int nuevoStock = stockAnterior - cantidadEntera;
+
+            lote.setStockLote(nuevoStock);
+
+            if (nuevoStock == 0) {
                 lote.setEstado(EstadoLote.AGOTADO);
             }
+
             loteRepository.save(lote);
+
+
+            // =====================================
+            // 2. REGISTRAR MOVIMIENTO CON ORACLE
+            // =====================================
+
+            movimientoProcedure.registrar(
+                    lote.getIdLote(),
+                    TipoMovimientoInventario.SALIDA,
+                    BigDecimal.valueOf(cantidadEntera),
+                    BigDecimal.valueOf(stockAnterior),
+                    BigDecimal.valueOf(nuevoStock),
+                    ReferenciaTipo.VENTA,
+                    venta.getIdVenta(),
+                    usuario.getIdUsuario()
+            );
         }
+
+
 
         return toDto(venta);
     }

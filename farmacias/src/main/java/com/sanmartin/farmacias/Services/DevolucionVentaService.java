@@ -22,23 +22,31 @@ public class DevolucionVentaService {
     private final EntityManager em;
     private final DetalleVentaRepository detallesRepository;
     private final UsuarioRepository usuarios;
+    private final MovimientoInventarioProcedure movimientoProcedure;
 
-    public DevolucionVentaService(EntityManager em, DetalleVentaRepository detallesRepository,
-                                 UsuarioRepository usuarios) {
+    public DevolucionVentaService(EntityManager em, DetalleVentaRepository detallesRepository, UsuarioRepository usuarios, MovimientoInventarioProcedure movimientoProcedure) {
         this.em = em;
         this.detallesRepository = detallesRepository;
         this.usuarios = usuarios;
+        this.movimientoProcedure = movimientoProcedure;
     }
 
+
     @Transactional
-    public DevolucionVentaResponseDTO devolver(Long idVenta, DevolucionVentaRequestDTO dto) {
+    public DevolucionVentaResponseDTO devolver(
+            Long idVenta,
+            DevolucionVentaRequestDTO dto,
+            Long idUsuario) {
         Venta venta = em.find(Venta.class, idVenta, LockModeType.PESSIMISTIC_WRITE);
         if (venta == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Venta no encontrada.");
         if (venta.getEstado() != EstadoVenta.EMITIDA) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "La venta ya está anulada.");
         }
-        Usuario usuario = usuarios.findById(dto.idUsuario())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuario no encontrado."));
+        Usuario usuario = usuarios.findById(idUsuario)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Usuario no encontrado."
+                ));
         var detalles = detallesRepository.findByVenta_idVenta(idVenta);
         var ids = new HashSet<>(dto.idDetalles());
         var seleccionados = detalles.stream().filter(d -> ids.contains(d.getIdDetalleVenta())).toList();
@@ -75,16 +83,21 @@ public class DevolucionVentaService {
             detalle.setEstado(EstadoDetalleVenta.D);
             importe = importe.add(detalle.getPrecioUnitario().multiply(detalle.getCantidad()));
 
-            MovimientoInventario movimiento = new MovimientoInventario();
-            movimiento.setLote(lote);
-            movimiento.setTipoMovimiento(TipoMovimientoInventario.ENTRADA);
-            movimiento.setCantidad(detalle.getCantidad());
-            movimiento.setStockAnterior(BigDecimal.valueOf(anterior));
-            movimiento.setStockNuevo(BigDecimal.valueOf(nuevo));
-            movimiento.setReferenciaTipo(ReferenciaTipo.VENTA);
-            movimiento.setReferenciaId(idVenta);
-            movimiento.setUsuario(usuario);
-            em.persist(movimiento);
+
+
+            movimientoProcedure.registrar(
+                    lote.getIdLote(),
+                    TipoMovimientoInventario.ENTRADA,
+                    detalle.getCantidad(),
+                    BigDecimal.valueOf(anterior),
+                    BigDecimal.valueOf(nuevo),
+                    ReferenciaTipo.DEVOLUCION,
+                    idVenta,
+                    usuario.getIdUsuario(),
+                    dto.observacion().trim()
+            );
+
+
         }
         if (detalles.stream().allMatch(d -> d.getEstado() == EstadoDetalleVenta.D)) {
             venta.setEstado(EstadoVenta.ANULADA);

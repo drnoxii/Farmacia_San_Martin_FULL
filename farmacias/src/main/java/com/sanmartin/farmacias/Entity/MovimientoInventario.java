@@ -40,6 +40,9 @@ public class MovimientoInventario {
     @Column(nullable = false)
     private LocalDateTime fecha = LocalDateTime.now();
 
+    @Column(name = "OBSERVACION", length = 500)
+    private String observacion;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "idUsuario", nullable = false)
     private Usuario usuario;
@@ -130,6 +133,14 @@ public class MovimientoInventario {
 
     public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
+    }
+
+    public String getObservacion() {
+        return observacion;
+    }
+
+    public void setObservacion(String observacion) {
+        this.observacion = observacion;
     }
 
     public Usuario getUsuario() {

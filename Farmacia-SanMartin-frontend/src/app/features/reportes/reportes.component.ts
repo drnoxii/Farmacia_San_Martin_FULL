@@ -10,9 +10,11 @@ import { VentaService } from '../../core/services/venta.service';
 import { VentaResponse } from '../../core/interfaces/venta-response.interface';
 import { DevolucionVentaResponse } from '../../core/interfaces/devolucion-venta.interface';
 import { ReporteCierres, ReporteInventario, ReporteVentas, ResumenVentasSP, ResumenVentas, PaginaVentas } from '../../core/interfaces/reporte.interface';
+import { MovimientoInventarioService } from '../../core/services/movimiento-inventario.service';
+import { PaginaMovimientos } from '../../core/interfaces/movimiento-inventario.interface';
 
 
-type Tab = 'ventas' | 'inventario' | 'cierres';
+type Tab = 'ventas' | 'inventario' | 'cierres' | 'kardex';
 type Periodo = 'hoy' | 'semana' | 'mes' | 'rango';
 
 @Component({
@@ -25,20 +27,32 @@ type Periodo = 'hoy' | 'semana' | 'mes' | 'rango';
 export class ReportesComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
 
+  get esAdministrador(): boolean {
+    return this.auth.getUsuario()?.rol === 'ADMIN';
+  }
+
   private reporteService = inject(ReporteService);
   private exportService = inject(ExportService);
   private alert = inject(AlertService);
   private ventaService = inject(VentaService);
 
+  private movimientoService = inject(MovimientoInventarioService);
+
+  kardex: PaginaMovimientos | null = null;
+  cargandoKardex = false;
+  errorKardex = '';
+
   ventaEditar: VentaResponse | null = null;
   cargandoVenta = false;
   guardandoDevolucion = false;
   resultadoDevolucion: DevolucionVentaResponse | null = null;
+  observacionDevolucion = '';
 
   editarDevolucion(id: number): void {
     if (this.cargandoVenta || this.guardandoDevolucion) return;
     this.cargandoVenta = true;
     this.resultadoDevolucion = null;
+    this.observacionDevolucion = '';
     this.ventaService.buscarVenta(id).subscribe({
       next: venta => {
         this.ventaEditar = venta;
@@ -65,9 +79,10 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   async guardarDevolucion(): Promise<void> {
     if (!this.ventaEditar || this.guardandoDevolucion || !this.detallesADevolver.length) return;
-    const idUsuario = this.auth.getUsuario()?.idUsuario ?? 0;
-    if (!Number.isInteger(idUsuario) || idUsuario <= 0) {
-      this.alert.error('Inicia sesión para registrar la devolución.');
+    const observacion = this.observacionDevolucion.trim();
+
+    if (!observacion || observacion.length > 500) {
+      this.alert.error('Ingresa un motivo de devolución válido.');
       return;
     }
     const venta = this.ventaEditar;
@@ -77,7 +92,11 @@ export class ReportesComponent implements OnInit, OnDestroy {
       `Se devolverán todos los productos pendientes de ${venta.numeroVenta} por S/ ${this.importeDevolucion.toFixed(2)}. Sus cantidades regresarán al stock y la venta quedará anulada.`,
       'Confirmar devolución');
     if (!confirmado) { this.guardandoDevolucion = false; return; }
-    this.ventaService.devolver(venta.idVenta, idUsuario, idDetalles).subscribe({
+    this.ventaService.devolver(
+      venta.idVenta,
+      idDetalles,
+      observacion
+    ).subscribe({
       next: resultado => {
         this.resultadoDevolucion = resultado;
         venta.detalles.filter(d => idDetalles.includes(d.idDetalleVenta)).forEach(d => d.estado = 'D');
@@ -188,6 +207,11 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   cargar(): void {
+
+    if (this.tab === 'kardex') {
+      this.cargarKardex(0);
+      return;
+    }
     if (this.tab !== 'inventario') {
       if (!this.desde || !this.hasta) {
         this.alert.error('Selecciona las fechas.');
@@ -210,7 +234,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
       this.alert.error(err.error?.message || 'No se pudo cargar el reporte');
     };
 
-    
+
     if (this.tab === 'ventas') {
       const desde = this.desde;
       const hasta = this.hasta;
@@ -275,7 +299,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   private get titulo(): string {
-    return { ventas: 'Reporte de ventas', inventario: 'Reporte de inventario', cierres: 'Reporte de cierres de caja' }[this.tab];
+    return { ventas: 'Reporte de ventas', inventario: 'Reporte de inventario', cierres: 'Reporte de cierres de caja', kardex: 'Kardex de inventario' }[this.tab];
   }
 
   private get subtitulo(): string {
@@ -304,7 +328,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
           nombre: 'Ventas',
           columnas: ['N° Venta', 'Fecha', 'Cliente', 'Vendedor', 'Comprobante', 'Pago', 'Total original (S/)', 'Devuelto (S/)', 'Estado'],
           filas: v.ventas.map(x => [x.numeroVenta, this.fechaHora(x.fecha), x.cliente, x.vendedor,
-            x.tipoComprobante, x.metodoPago, x.total, x.totalDevuelto, x.estado]),
+          x.tipoComprobante, x.metodoPago, x.total, x.totalDevuelto, x.estado]),
           dinero: [6, 7]
         }
       ];
@@ -330,7 +354,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
         nombre: 'Cierres de caja',
         columnas: ['Cajero', 'Apertura', 'Cierre', 'Inicial', 'Ventas efectivo', 'Esperado', 'Contado', 'Diferencia'],
         filas: this.cierres.cierres.map(c => [c.cajero, this.fechaHora(c.apertura), this.fechaHora(c.cierre),
-          c.montoInicial, c.ventasEfectivo, c.esperado, c.contado, c.diferencia]),
+        c.montoInicial, c.ventasEfectivo, c.esperado, c.contado, c.diferencia]),
         dinero: [3, 4, 5, 6, 7]
       }];
     }
@@ -367,4 +391,30 @@ export class ReportesComponent implements OnInit, OnDestroy {
       this.exportando = false;
     }
   }
+
+  cargarKardex(pagina: number = 0): void {
+    if (this.cargandoKardex || pagina < 0) return;
+
+    this.cargandoKardex = true;
+    this.errorKardex = '';
+
+    this.movimientoService.listar(pagina, 20).subscribe({
+      next: respuesta => {
+        this.kardex = respuesta;
+        this.cargandoKardex = false;
+      },
+      error: err => {
+        this.cargandoKardex = false;
+
+        if (err.status === 403) {
+          this.errorKardex = 'No tienes permisos para consultar el Kardex.';
+        } else if (err.status === 401) {
+          this.errorKardex = 'Tu sesión ha expirado. Inicia sesión nuevamente.';
+        } else {
+          this.errorKardex = 'No se pudieron cargar los movimientos.';
+        }
+      }
+    });
+  }
+
 }

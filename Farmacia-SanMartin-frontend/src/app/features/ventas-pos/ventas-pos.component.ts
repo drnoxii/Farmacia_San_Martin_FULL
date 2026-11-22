@@ -323,13 +323,25 @@ export class VentasPosComponent implements OnInit {
 
   // ========== PRODUCTOS ==========
 
-  get productosFiltrados() {
-    if (!this.busqueda) return [];
-    return this.productos.filter(p =>
-      p.nombreProducto.toLowerCase().includes(this.busqueda.toLowerCase()) ||
-      (p.codigo && p.codigo.toLowerCase().includes(this.busqueda.toLowerCase()))
-    ).slice(0, 5);
+
+
+  get productosFiltrados(): Producto[] {
+    const texto = this.busqueda.trim().toLowerCase();
+
+    // No mostrar productos si el buscador está vacío
+    if (!texto) {
+      return [];
+    }
+
+    return this.productos
+      .filter(p =>
+        p.nombreProducto.toLowerCase().includes(texto) ||
+        (p.codigo ?? '').toLowerCase().includes(texto)
+      )
+      .slice(0, 5);
   }
+
+
 
   seleccionarProducto(p: Producto): void {
     this.productoSeleccionado = p;
@@ -390,7 +402,10 @@ export class VentasPosComponent implements OnInit {
 
     this.ventaService.registrarVenta(ventaRequest).subscribe({
       next: (res) => {
-        this.alertService.success('Venta registrada correctamente');
+        this.alertService.toast(
+          'Venta registrada correctamente',
+          'success'
+        );
         this.ventaGenerada = res;
         this.documentoTicket = this.clienteSeleccionado?.numeroDocumento ?? '00000000';
         this.cartService.vaciarCarrito();

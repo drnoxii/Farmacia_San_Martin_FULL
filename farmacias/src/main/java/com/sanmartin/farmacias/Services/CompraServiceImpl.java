@@ -26,8 +26,9 @@ public class CompraServiceImpl implements ICompraService{
     private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
     private final EntityManager em;
+    private final MovimientoInventarioProcedure movimientoProcedure;
 
-    public CompraServiceImpl(CompraRepository compraRepository, DetalleCompraRepository detalleCompraRepository, LoteRepository loteRepository, ProveedorRepository proveedorRepository, UsuarioRepository usuarioRepository, ProductoRepository productoRepository, EntityManager em) {
+    public CompraServiceImpl(CompraRepository compraRepository, DetalleCompraRepository detalleCompraRepository, LoteRepository loteRepository, ProveedorRepository proveedorRepository, UsuarioRepository usuarioRepository, ProductoRepository productoRepository, EntityManager em, MovimientoInventarioProcedure movimientoProcedure) {
         this.compraRepository = compraRepository;
         this.detalleCompraRepository = detalleCompraRepository;
         this.loteRepository = loteRepository;
@@ -35,6 +36,7 @@ public class CompraServiceImpl implements ICompraService{
         this.usuarioRepository = usuarioRepository;
         this.productoRepository = productoRepository;
         this.em = em;
+        this.movimientoProcedure = movimientoProcedure;
     }
 
     @Override
@@ -143,16 +145,18 @@ public class CompraServiceImpl implements ICompraService{
                 lote.setEstado(EstadoLote.ACTIVO);
                 loteRepository.save(lote);
 
-                MovimientoInventario mov = new MovimientoInventario();
-                mov.setLote(lote);
-                mov.setTipoMovimiento(TipoMovimientoInventario.ENTRADA);
-                mov.setCantidad(BigDecimal.valueOf(detalle.getCantidad()));
-                mov.setStockAnterior(BigDecimal.valueOf(stockAnterior));
-                mov.setStockNuevo(BigDecimal.valueOf(nuevoStock));
-                mov.setReferenciaTipo(ReferenciaTipo.COMPRA);
-                mov.setReferenciaId(compra.getIdCompra());
-                mov.setUsuario(compra.getUsuario());
-                em.persist(mov);
+
+                movimientoProcedure.registrar(
+                        lote.getIdLote(),
+                        TipoMovimientoInventario.ENTRADA,
+                        BigDecimal.valueOf(detalle.getCantidad()),
+                        BigDecimal.valueOf(stockAnterior),
+                        BigDecimal.valueOf(nuevoStock),
+                        ReferenciaTipo.COMPRA,
+                        compra.getIdCompra(),
+                        compra.getUsuario().getIdUsuario()
+                );
+
             }
         }
 
@@ -188,16 +192,18 @@ public class CompraServiceImpl implements ICompraService{
                 }
                 loteRepository.save(lote);
 
-                MovimientoInventario mov = new MovimientoInventario();
-                mov.setLote(lote);
-                mov.setTipoMovimiento(TipoMovimientoInventario.SALIDA);
-                mov.setCantidad(BigDecimal.valueOf(detalle.getCantidad()));
-                mov.setStockAnterior(BigDecimal.valueOf(stockAnterior));
-                mov.setStockNuevo(BigDecimal.valueOf(nuevoStock));
-                mov.setReferenciaTipo(ReferenciaTipo.COMPRA);
-                mov.setReferenciaId(compra.getIdCompra());
-                mov.setUsuario(compra.getUsuario());
-                em.persist(mov);
+
+                movimientoProcedure.registrar(
+                        lote.getIdLote(),
+                        TipoMovimientoInventario.SALIDA,
+                        BigDecimal.valueOf(detalle.getCantidad()),
+                        BigDecimal.valueOf(stockAnterior),
+                        BigDecimal.valueOf(nuevoStock),
+                        ReferenciaTipo.COMPRA,
+                        compra.getIdCompra(),
+                        compra.getUsuario().getIdUsuario()
+                );
+
             }
         }
         // Caso 3: PENDIENTE -> ANULADA (Se cancela antes de recibir, nunca sumó, no se resta nada)

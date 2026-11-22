@@ -22,9 +22,22 @@ export class VentaService {
     return this.http.get<VentaResponse>(`${this.apiUrl}/${id}`);
   }
 
-  devolver(id: number, idUsuario: number, idDetalles: number[]): Observable<DevolucionVentaResponse> {
-    return this.http.post<DevolucionVentaResponse>(`${this.apiUrl}/${id}/devoluciones`, { idUsuario, idDetalles });
-  }
+  
+devolver(
+  id: number,
+  idDetalles: number[],
+  observacion: string
+): Observable<DevolucionVentaResponse> {
+
+  return this.http.post<DevolucionVentaResponse>(
+    `${this.apiUrl}/${id}/devoluciones`,
+    {
+      idDetalles,
+      observacion
+    }
+  );
+}
+
 
 
 }

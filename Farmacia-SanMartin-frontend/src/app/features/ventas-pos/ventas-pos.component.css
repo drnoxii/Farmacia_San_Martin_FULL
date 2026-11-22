@@ -88,3 +88,38 @@
     max-width: calc(100% - 24px) !important;
   }
 }
+
+/* Lista de productos del POS */
+.resultados-productos {
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+
+/* Permitir resultados flotantes en el buscador */
+.card-buscador {
+  overflow: visible;
+}
+
+/* Resultados sin desplazar los demás elementos */
+.resultados-productos {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+
+  z-index: 1100;
+  max-height: 260px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background-color: white;
+  border-radius: 8px;
+}
+
+/* Evitar movimiento lateral al pasar el mouse */
+.resultados-productos .list-group-item:hover {
+  transform: none;
+}

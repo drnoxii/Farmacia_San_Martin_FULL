@@ -2,11 +2,13 @@
 
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="fw-bold text-dark m-0"><i class="bi bi-bar-chart-line me-2"></i>Reportes</h2>
-    <div class="btn-group">
-      <button class="btn btn-outline-success btn-sm" (click)="exportarExcel()" [disabled]="!hayDatos || cargando || exportando">
+    <div class="btn-group" *ngIf="tab !== 'kardex'">
+      <button class="btn btn-outline-success btn-sm" (click)="exportarExcel()"
+        [disabled]="!hayDatos || cargando || exportando">
         <i class="bi bi-file-earmark-excel me-1"></i> Excel
       </button>
-      <button class="btn btn-outline-danger btn-sm" (click)="exportarPdf()" [disabled]="!hayDatos || cargando || exportando">
+      <button class="btn btn-outline-danger btn-sm" (click)="exportarPdf()"
+        [disabled]="!hayDatos || cargando || exportando">
         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
       </button>
     </div>
@@ -18,23 +20,37 @@
       <button class="nav-link" [class.active]="tab === 'ventas'" (click)="cambiarTab('ventas')">Ventas</button>
     </li>
     <li class="nav-item">
-      <button class="nav-link" [class.active]="tab === 'inventario'" (click)="cambiarTab('inventario')">Inventario</button>
+      <button class="nav-link" [class.active]="tab === 'inventario'"
+        (click)="cambiarTab('inventario')">Inventario</button>
     </li>
     <li class="nav-item">
-      <button class="nav-link" [class.active]="tab === 'cierres'" (click)="cambiarTab('cierres')">Cierres de caja</button>
+      <button class="nav-link" [class.active]="tab === 'cierres'" (click)="cambiarTab('cierres')">Cierres de
+        caja</button>
     </li>
+
+    <li class="nav-item" *ngIf="esAdministrador">
+      <button class="nav-link" [class.active]="tab === 'kardex'" (click)="cambiarTab('kardex')">
+        <i class="bi bi-clock-history me-1"></i>
+        Kardex
+      </button>
+    </li>
+
   </ul>
 
   <!-- Filtro de fechas (Ventas y Cierres) -->
-  <div class="card shadow-sm border-0 mb-3" *ngIf="tab !== 'inventario'">
+  <div class="card shadow-sm border-0 mb-3" *ngIf="tab === 'ventas' || tab === 'cierres'">
     <div class="card-body">
       <div class="row g-2 align-items-end">
         <div class="col-12 col-lg-auto">
           <div class="btn-group">
-            <button class="btn btn-sm" [ngClass]="periodo === 'hoy' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('hoy')">Hoy</button>
-            <button class="btn btn-sm" [ngClass]="periodo === 'semana' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('semana')">Esta semana</button>
-            <button class="btn btn-sm" [ngClass]="periodo === 'mes' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('mes')">Este mes</button>
-            <button class="btn btn-sm" [ngClass]="periodo === 'rango' ? 'btn-sanmartin' : 'btn-outline-secondary'" (click)="setPeriodo('rango')">Rango</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'hoy' ? 'btn-sanmartin' : 'btn-outline-secondary'"
+              (click)="setPeriodo('hoy')">Hoy</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'semana' ? 'btn-sanmartin' : 'btn-outline-secondary'"
+              (click)="setPeriodo('semana')">Esta semana</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'mes' ? 'btn-sanmartin' : 'btn-outline-secondary'"
+              (click)="setPeriodo('mes')">Este mes</button>
+            <button class="btn btn-sm" [ngClass]="periodo === 'rango' ? 'btn-sanmartin' : 'btn-outline-secondary'"
+              (click)="setPeriodo('rango')">Rango</button>
           </div>
         </div>
         <ng-container *ngIf="periodo === 'rango'">
@@ -73,96 +89,106 @@
 
   <!-- ================= VENTAS ================= -->
   <ng-container *ngIf="tab === 'ventas' && ventas as v">
-   
-<!-- RESUMEN DEL PROCEDIMIENTO ALMACENADO ORACLE -->
-<div class="card shadow-sm border-0 mb-3">
 
-  <div class="card-header bg-white fw-bold">
-    <i class="bi bi-database me-2 text-success"></i>
-    Resumen general
-  </div>
+    <!-- RESUMEN DEL PROCEDIMIENTO ALMACENADO ORACLE -->
+    <div class="card shadow-sm border-0 mb-3">
 
-  <div class="card-body">
+      <div class="card-header bg-white fw-bold">
+        <i class="bi bi-database me-2 text-success"></i>
+        Resumen general
+      </div>
 
-    <!-- Mensaje de carga -->
-    <div *ngIf="cargandoResumenSP" class="text-muted">
-      Consultando procedimiento almacenado...
-    </div>
+      <div class="card-body">
 
-    <!-- Mensaje de error -->
-    <div *ngIf="errorResumenSP" class="alert alert-warning">
-      {{ errorResumenSP }}
-    </div>
+        <!-- Mensaje de carga -->
+        <div *ngIf="cargandoResumenSP" class="text-muted">
+          Consultando procedimiento almacenado...
+        </div>
 
-    <!-- Resultados del procedimiento -->
-    <div *ngIf="resumenSP as sp" class="row g-3">
+        <!-- Mensaje de error -->
+        <div *ngIf="errorResumenSP" class="alert alert-warning">
+          {{ errorResumenSP }}
+        </div>
 
-      <div class="col-md-6">
-        <div class="bg-light rounded p-3 h-100">
+        <!-- Resultados del procedimiento -->
+        <div *ngIf="resumenSP as sp" class="row g-3">
 
-          <div class="text-muted small">
-            Cantidad de ventas registradas
+          <div class="col-md-6">
+            <div class="bg-light rounded p-3 h-100">
+
+              <div class="text-muted small">
+                Cantidad de ventas registradas
+              </div>
+
+              <div class="fs-4 fw-bold">
+                {{ sp.cantidadRegistros }}
+              </div>
+
+            </div>
           </div>
 
-          <div class="fs-4 fw-bold">
-            {{ sp.cantidadRegistros }}
+          <div class="col-md-6">
+            <div class="bg-light rounded p-3 h-100">
+
+              <div class="text-muted small">
+                Total registrado
+              </div>
+
+              <div class="fs-4 fw-bold text-success">
+                S/ {{ sp.totalRegistrado | number:'1.2-2' }}
+              </div>
+
+            </div>
           </div>
 
         </div>
+
       </div>
 
-      <div class="col-md-6">
-        <div class="bg-light rounded p-3 h-100">
+    </div>
+    <!-- FIN DEL RESUMEN ORACLE -->
 
-          <div class="text-muted small">
-            Total registrado
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total vendido</div>
+            <div class="fs-4 fw-bold text-success">S/ {{ v.totalVendido | number:'1.2-2' }}</div>
           </div>
-
-          <div class="fs-4 fw-bold text-success">
-            S/ {{ sp.totalRegistrado | number:'1.2-2' }}
-          </div>
-
         </div>
       </div>
-
-    </div>
-
-  </div>
-
- </div> 
- <!-- FIN DEL RESUMEN ORACLE -->
-
-    <div class="row g-3 mb-3">
       <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">Total vendido</div>
-          <div class="fs-4 fw-bold text-success">S/ {{ v.totalVendido | number:'1.2-2' }}</div>
-        </div></div>
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">N° de ventas</div>
+            <div class="fs-4 fw-bold">{{ v.cantidadVentas }}</div>
+          </div>
+        </div>
       </div>
       <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">N° de ventas</div>
-          <div class="fs-4 fw-bold">{{ v.cantidadVentas }}</div>
-        </div></div>
-      </div>
-      <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">Ventas anuladas</div>
-          <div class="fs-4 fw-bold text-danger">{{ v.cantidadAnuladas }}
-            <small class="fs-6 text-muted">· S/ {{ v.totalAnulado | number:'1.2-2' }}</small></div>
-        </div></div>
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Ventas anuladas</div>
+            <div class="fs-4 fw-bold text-danger">{{ v.cantidadAnuladas }}
+              <small class="fs-6 text-muted">· S/ {{ v.totalAnulado | number:'1.2-2' }}</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="row g-3 mb-3">
       <div class="col-lg-4">
-        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por método de pago', items: v.porMetodoPago }"></ng-container>
+        <ng-container
+          *ngTemplateOutlet="resumen; context: { titulo: 'Por método de pago', items: v.porMetodoPago }"></ng-container>
       </div>
       <div class="col-lg-4">
-        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por comprobante', items: v.porComprobante }"></ng-container>
+        <ng-container
+          *ngTemplateOutlet="resumen; context: { titulo: 'Por comprobante', items: v.porComprobante }"></ng-container>
       </div>
       <div class="col-lg-4">
-        <ng-container *ngTemplateOutlet="resumen; context: { titulo: 'Por vendedor', items: v.porVendedor }"></ng-container>
+        <ng-container
+          *ngTemplateOutlet="resumen; context: { titulo: 'Por vendedor', items: v.porVendedor }"></ng-container>
       </div>
     </div>
 
@@ -180,56 +206,72 @@
           </div>
           <div class="col-auto">
             <button type="submit" class="btn btn-sm btn-primary" [disabled]="cargandoDetalle">Buscar</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="limpiarBusqueda()">Limpiar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+              (click)="limpiarBusqueda()">Limpiar</button>
           </div>
         </form>
       </div>
       <div *ngIf="cargandoDetalle" class="text-center text-muted py-4" role="status">Buscando ventas…</div>
       <div *ngIf="errorDetalle" class="alert alert-warning m-3" role="alert">{{ errorDetalle }}</div>
       <ng-container *ngIf="!cargandoDetalle && paginaVentas as pagina">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light text-muted">
-            <tr>
-              <th class="ps-3">N° Venta</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th>
-              <th>Comprobante</th><th>Pago</th><th class="text-end">Total original</th><th class="text-end">Devuelto</th><th class="text-center">Estado</th><th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="pagina.ventas.length === 0">
-              <td colspan="10" class="text-center py-4 text-muted">{{ busquedaAplicada ? 'No se encontraron ventas con esa búsqueda en este período.' : 'No hay ventas en este período.' }}</td>
-            </tr>
-            <tr *ngFor="let x of pagina.ventas" [class.text-decoration-line-through]="x.estado === 'ANULADA'">
-              <td class="ps-3 fw-bold">{{ x.numeroVenta }}</td>
-              <td>{{ fechaHora(x.fecha) }}</td>
-              <td>{{ x.cliente }}</td>
-              <td>{{ x.vendedor }}</td>
-              <td>{{ x.tipoComprobante }}</td>
-              <td>{{ x.metodoPago }}</td>
-              <td class="text-end">S/ {{ x.total | number:'1.2-2' }}</td>
-              <td class="text-end">S/ {{ x.totalDevuelto | number:'1.2-2' }}</td>
-              <td class="text-center">
-                <span class="badge rounded-pill" [ngClass]="x.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{ x.estado }}</span>
-                <div *ngIf="x.estado === 'EMITIDA' && x.totalDevuelto > 0" class="small text-muted">Devolución parcial</div>
-              </td>
-              <td><button class="btn btn-sm btn-outline-primary" (click)="editarDevolucion(x.idVenta)"
-                [attr.title]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
-                [attr.aria-label]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
-                [disabled]="cargandoVenta || guardandoDevolucion">
-                <i class="bi bi-pencil-square" aria-hidden="true"></i>
-              </button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <small class="text-muted" aria-live="polite">Mostrando {{ primerResultado }}–{{ ultimoResultado }} de {{ pagina.totalRegistros }} resultados</small>
-        <nav class="d-flex align-items-center gap-2" aria-label="Páginas de ventas">
-          <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina === 0" (click)="cargarPagina(pagina.pagina - 1)">Anterior</button>
-          <span class="small">Página {{ pagina.totalPaginas ? pagina.pagina + 1 : 0 }} de {{ pagina.totalPaginas }}</span>
-          <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina + 1 >= pagina.totalPaginas" (click)="cargarPagina(pagina.pagina + 1)">Siguiente</button>
-        </nav>
-      </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-muted">
+              <tr>
+                <th class="ps-3">N° Venta</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Vendedor</th>
+                <th>Comprobante</th>
+                <th>Pago</th>
+                <th class="text-end">Total original</th>
+                <th class="text-end">Devuelto</th>
+                <th class="text-center">Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="pagina.ventas.length === 0">
+                <td colspan="10" class="text-center py-4 text-muted">{{ busquedaAplicada ? 'No se encontraron ventas con
+                  esa búsqueda en este período.' : 'No hay ventas en este período.' }}</td>
+              </tr>
+              <tr *ngFor="let x of pagina.ventas" [class.text-decoration-line-through]="x.estado === 'ANULADA'">
+                <td class="ps-3 fw-bold">{{ x.numeroVenta }}</td>
+                <td>{{ fechaHora(x.fecha) }}</td>
+                <td>{{ x.cliente }}</td>
+                <td>{{ x.vendedor }}</td>
+                <td>{{ x.tipoComprobante }}</td>
+                <td>{{ x.metodoPago }}</td>
+                <td class="text-end">S/ {{ x.total | number:'1.2-2' }}</td>
+                <td class="text-end">S/ {{ x.totalDevuelto | number:'1.2-2' }}</td>
+                <td class="text-center">
+                  <span class="badge rounded-pill" [ngClass]="x.estado === 'EMITIDA' ? 'bg-success' : 'bg-danger'">{{
+                    x.estado }}</span>
+                  <div *ngIf="x.estado === 'EMITIDA' && x.totalDevuelto > 0" class="small text-muted">Devolución parcial
+                  </div>
+                </td>
+                <td><button class="btn btn-sm btn-outline-primary" (click)="editarDevolucion(x.idVenta)"
+                    [attr.title]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
+                    [attr.aria-label]="x.estado === 'EMITIDA' ? 'Editar devolución' : 'Ver devolución'"
+                    [disabled]="cargandoVenta || guardandoDevolucion">
+                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                  </button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <small class="text-muted" aria-live="polite">Mostrando {{ primerResultado }}–{{ ultimoResultado }} de {{
+            pagina.totalRegistros }} resultados</small>
+          <nav class="d-flex align-items-center gap-2" aria-label="Páginas de ventas">
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina === 0"
+              (click)="cargarPagina(pagina.pagina - 1)">Anterior</button>
+            <span class="small">Página {{ pagina.totalPaginas ? pagina.pagina + 1 : 0 }} de {{ pagina.totalPaginas
+              }}</span>
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="pagina.pagina + 1 >= pagina.totalPaginas"
+              (click)="cargarPagina(pagina.pagina + 1)">Siguiente</button>
+          </nav>
+        </div>
       </ng-container>
     </div>
   </ng-container>
@@ -245,8 +287,12 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light text-muted">
             <tr>
-              <th class="ps-3">Código</th><th>Producto</th><th>Categoría</th>
-              <th class="text-end">Stock actual</th><th class="text-end">Mínimo</th><th class="text-end pe-4">Faltan</th>
+              <th class="ps-3">Código</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th class="text-end">Stock actual</th>
+              <th class="text-end">Mínimo</th>
+              <th class="text-end pe-4">Faltan</th>
             </tr>
           </thead>
           <tbody>
@@ -268,14 +314,19 @@
 
     <div class="card shadow-sm border-0 mb-3" id="por-vencer">
       <div class="card-header bg-white fw-bold">
-        Lotes por vencer (próximos {{ i.dias }} días) <span class="badge bg-warning text-dark ms-2">{{ i.lotesPorVencer.length }}</span>
+        Lotes por vencer (próximos {{ i.dias }} días) <span class="badge bg-warning text-dark ms-2">{{
+          i.lotesPorVencer.length }}</span>
       </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light text-muted">
             <tr>
-              <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Vencimiento</th>
-              <th class="text-end">Stock</th><th class="text-center pe-4">Faltan</th>
+              <th class="ps-3">Código</th>
+              <th>Producto</th>
+              <th>Lote</th>
+              <th>Vencimiento</th>
+              <th class="text-end">Stock</th>
+              <th class="text-center pe-4">Faltan</th>
             </tr>
           </thead>
           <tbody>
@@ -289,7 +340,8 @@
               <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
               <td class="text-end">{{ l.stock }}</td>
               <td class="text-center pe-4">
-                <span class="badge" [ngClass]="l.diasRestantes <= 7 ? 'bg-danger' : 'bg-warning text-dark'">{{ l.diasRestantes }} días</span>
+                <span class="badge" [ngClass]="l.diasRestantes <= 7 ? 'bg-danger' : 'bg-warning text-dark'">{{
+                  l.diasRestantes }} días</span>
               </td>
             </tr>
           </tbody>
@@ -305,8 +357,12 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light text-muted">
             <tr>
-              <th class="ps-3">Código</th><th>Producto</th><th>Lote</th><th>Venció</th>
-              <th class="text-end">Stock</th><th class="text-center pe-4">Hace</th>
+              <th class="ps-3">Código</th>
+              <th>Producto</th>
+              <th>Lote</th>
+              <th>Venció</th>
+              <th class="text-end">Stock</th>
+              <th class="text-center pe-4">Hace</th>
             </tr>
           </thead>
           <tbody>
@@ -319,7 +375,8 @@
               <td>{{ l.numeroLote }}</td>
               <td>{{ fechaCorta(l.fechaVencimiento) }}</td>
               <td class="text-end">{{ l.stock }}</td>
-              <td class="text-center pe-4"><span class="badge bg-dark">{{ diasVencido(l.diasRestantes) }} días</span></td>
+              <td class="text-center pe-4"><span class="badge bg-dark">{{ diasVencido(l.diasRestantes) }} días</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -332,22 +389,28 @@
 
     <div class="row g-3 mb-3">
       <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">Cajas cerradas</div>
-          <div class="fs-4 fw-bold">{{ c.cantidad }}</div>
-        </div></div>
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Cajas cerradas</div>
+            <div class="fs-4 fw-bold">{{ c.cantidad }}</div>
+          </div>
+        </div>
       </div>
       <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">Total sobrantes</div>
-          <div class="fs-4 fw-bold text-warning">S/ {{ c.totalSobrantes | number:'1.2-2' }}</div>
-        </div></div>
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total sobrantes</div>
+            <div class="fs-4 fw-bold text-warning">S/ {{ c.totalSobrantes | number:'1.2-2' }}</div>
+          </div>
+        </div>
       </div>
       <div class="col-md-4">
-        <div class="card shadow-sm border-0 h-100"><div class="card-body">
-          <div class="text-muted small">Total faltantes</div>
-          <div class="fs-4 fw-bold text-danger">S/ {{ c.totalFaltantes | number:'1.2-2' }}</div>
-        </div></div>
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="text-muted small">Total faltantes</div>
+            <div class="fs-4 fw-bold text-danger">S/ {{ c.totalFaltantes | number:'1.2-2' }}</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -357,9 +420,14 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light text-muted">
             <tr>
-              <th class="ps-3">Cajero</th><th>Apertura</th><th>Cierre</th>
-              <th class="text-end">Inicial</th><th class="text-end">Ventas efectivo</th>
-              <th class="text-end">Esperado</th><th class="text-end">Contado</th><th class="text-end">Diferencia</th>
+              <th class="ps-3">Cajero</th>
+              <th>Apertura</th>
+              <th>Cierre</th>
+              <th class="text-end">Inicial</th>
+              <th class="text-end">Ventas efectivo</th>
+              <th class="text-end">Esperado</th>
+              <th class="text-end">Contado</th>
+              <th class="text-end">Diferencia</th>
             </tr>
           </thead>
           <tbody>
@@ -375,7 +443,7 @@
               <td class="text-end">S/ {{ x.esperado | number:'1.2-2' }}</td>
               <td class="text-end">S/ {{ x.contado | number:'1.2-2' }}</td>
               <td class="text-end fw-bold"
-                  [ngClass]="x.diferencia === 0 ? 'text-success' : x.diferencia > 0 ? 'text-warning' : 'text-danger'">
+                [ngClass]="x.diferencia === 0 ? 'text-success' : x.diferencia > 0 ? 'text-warning' : 'text-danger'">
                 S/ {{ x.diferencia | number:'1.2-2' }}
               </td>
             </tr>
@@ -384,6 +452,157 @@
       </div>
     </div>
   </ng-container>
+
+
+  <!-- ================= KARDEX ================= -->
+  <ng-container *ngIf="tab === 'kardex' && esAdministrador">
+
+    <div class="card shadow-sm border-0">
+
+      <div class="card-header bg-white
+                d-flex justify-content-between
+                align-items-center py-3">
+
+        <div>
+          <h5 class="fw-bold mb-1">
+            <i class="bi bi-clock-history me-2"></i>
+            Historial de Inventario
+          </h5>
+          <small class="text-muted">
+            Entradas, salidas y devoluciones registradas
+          </small>
+        </div>
+
+        <button class="btn btn-outline-success btn-sm" (click)="cargarKardex(kardex?.number ?? 0)"
+          [disabled]="cargandoKardex">
+          <i class="bi bi-arrow-clockwise me-1"></i>
+          Actualizar
+        </button>
+
+      </div>
+
+      <!-- CARGA -->
+      <div *ngIf="cargandoKardex" class="text-center text-muted py-4">
+        Cargando movimientos...
+      </div>
+
+      <!-- ERROR -->
+      <div *ngIf="errorKardex" class="alert alert-danger m-3">
+        {{ errorKardex }}
+      </div>
+
+      <!-- RESULTADOS -->
+      <ng-container *ngIf="kardex as datos">
+
+        <div class="table-responsive">
+
+          <table class="table table-hover align-middle mb-0">
+
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Producto / Lote</th>
+                <th>Movimiento</th>
+                <th>Referencia</th>
+                <th class="text-end">Cantidad</th>
+                <th>Stock</th>
+                <th>Responsable</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <tr *ngFor="let m of datos.content">
+
+                <td class="text-nowrap">
+                  {{ m.fecha | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+
+                <td>
+                  <strong>{{ m.nombreProducto }}</strong>
+                  <div class="small text-muted">
+                    {{ m.codigoProducto }}
+                    · Lote {{ m.numeroLote }}
+                  </div>
+                </td>
+
+                <td>
+                  <span class="badge" [ngClass]="{
+                        'bg-success': m.tipoMovimiento === 'ENTRADA',
+                        'bg-danger': m.tipoMovimiento === 'SALIDA',
+                        'bg-warning text-dark': m.tipoMovimiento === 'AJUSTE'
+                      }">
+                    {{ m.tipoMovimiento }}
+                  </span>
+                </td>
+
+                <td>
+                  <strong>{{ m.referenciaTipo || '—' }}</strong>
+                  <div class="small text-muted">
+                    ID: {{ m.referenciaId ?? '—' }}
+                  </div>
+                </td>
+
+                <td class="text-end fw-bold">
+                  {{ m.cantidad }}
+                </td>
+
+                <td class="text-nowrap">
+                  {{ m.stockAnterior }}
+                  →
+                  <strong>{{ m.stockNuevo }}</strong>
+                </td>
+
+                <td>{{ m.nombreUsuario }}</td>
+
+                <td>{{ m.observacion || '—' }}</td>
+
+              </tr>
+
+              <tr *ngIf="datos.content.length === 0">
+                <td colspan="8" class="text-center text-muted py-4">
+                  No hay movimientos registrados.
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+
+        </div>
+
+        <!-- PAGINACIÓN -->
+        <div class="card-footer bg-white
+                  d-flex justify-content-between
+                  align-items-center">
+
+          <small class="text-muted">
+            {{ datos.totalElements }} movimientos
+            · Página {{ datos.number + 1 }}
+            de {{ datos.totalPages || 1 }}
+          </small>
+
+          <div class="btn-group">
+
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="datos.first || cargandoKardex"
+              (click)="cargarKardex(datos.number - 1)">
+              Anterior
+            </button>
+
+            <button class="btn btn-sm btn-outline-secondary" [disabled]="datos.last || cargandoKardex"
+              (click)="cargarKardex(datos.number + 1)">
+              Siguiente
+            </button>
+
+          </div>
+        </div>
+
+      </ng-container>
+    </div>
+
+  </ng-container>
+  <!-- FIN KARDEX -->
+
 </div>
 
 <!-- Plantilla reutilizable: tabla pequeña de resumen -->
@@ -392,7 +611,11 @@
     <div class="card-header bg-white fw-bold">{{ titulo }}</div>
     <table class="table table-sm align-middle mb-0">
       <thead class="table-light text-muted">
-        <tr><th class="ps-3"></th><th class="text-center">Ventas</th><th class="text-end pe-3">Total</th></tr>
+        <tr>
+          <th class="ps-3"></th>
+          <th class="text-center">Ventas</th>
+          <th class="text-end pe-3">Total</th>
+        </tr>
       </thead>
       <tbody>
         <tr *ngIf="items.length === 0">
@@ -408,45 +631,141 @@
   </div>
 </ng-template>
 
+
+
 <div *ngIf="ventaEditar as venta" class="modal d-block" role="dialog" aria-modal="true"
   aria-labelledby="titulo-devolucion" tabindex="-1" style="background: rgba(0,0,0,.5)"
   (keydown.escape)="!guardandoDevolucion && (ventaEditar = null)">
+
   <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
+
       <div class="modal-header">
-        <h5 class="modal-title" id="titulo-devolucion">Devolución · {{ venta.numeroVenta }}</h5>
-        <button class="btn-close" aria-label="Cerrar" [disabled]="guardandoDevolucion" (click)="ventaEditar = null"></button>
+        <h5 class="modal-title" id="titulo-devolucion">
+          Devolución · {{ venta.numeroVenta }}
+        </h5>
+
+        <button class="btn-close" aria-label="Cerrar" [disabled]="guardandoDevolucion" (click)="ventaEditar = null">
+        </button>
       </div>
+
+
       <div class="modal-body">
+
+        <!-- Mensaje de devolución exitosa -->
         <div *ngIf="resultadoDevolucion as resultado" class="alert alert-success" role="status">
-          <strong>Devolución registrada: S/ {{ resultado.importeDevuelto | number:'1.2-2' }}</strong>
+
+          <strong>
+            Devolución registrada:
+            S/ {{ resultado.importeDevuelto | number:'1.2-2' }}
+          </strong>
+
           <div *ngFor="let lote of resultado.lotes">
-            {{ lote.producto }} · Lote {{ lote.numeroLote }} · Stock actual: <strong>{{ lote.stockActual }}</strong>
+            {{ lote.producto }} · Lote {{ lote.numeroLote }}
+            · Stock actual:
+            <strong>{{ lote.stockActual }}</strong>
           </div>
         </div>
+
+
         <div class="table-responsive">
-          <table class="table align-middle">
-            <thead><tr><th>Código</th><th>Producto / lote</th><th>Cantidad</th><th class="text-end">Importe</th><th>Estado</th></tr></thead>
+          <table class="table table-hover align-middle mb-0">
+
+            <thead class="table-light">
+              <tr>
+                <th>Código</th>
+                <th>Producto / lote</th>
+                <th>Cantidad</th>
+                <th class="text-end">Importe</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
             <tbody>
               <tr *ngFor="let d of venta.detalles">
+
                 <td>{{ d.codigoProducto || '—' }}</td>
-                <td>{{ d.nombreProducto }}<div class="text-muted small">{{ d.numeroLote }}</div></td>
+
+                <td>
+                  {{ d.nombreProducto }}
+                  <div class="text-muted small">
+                    {{ d.numeroLote }}
+                  </div>
+                </td>
+
                 <td>{{ d.cantidad }}</td>
-                <td class="text-end">S/ {{ d.cantidad * d.precioUnitario | number:'1.2-2' }}</td>
-                <td><span class="badge" [ngClass]="d.estado === 'D' ? 'bg-warning text-dark' : 'bg-success'">{{ d.estado === 'D' ? 'Devuelto' : 'Vendido' }}</span></td>
+
+                <td class="text-end">
+                  S/ {{ d.cantidad * d.precioUnitario | number:'1.2-2' }}
+                </td>
+
+                <td>
+                  <span class="badge" [ngClass]="d.estado === 'D'
+                          ? 'bg-warning text-dark'
+                          : 'bg-success'">
+
+                    {{ d.estado === 'D' ? 'Devuelto' : 'Vendido' }}
+                  </span>
+                </td>
+
               </tr>
             </tbody>
           </table>
         </div>
-        <div *ngIf="venta.estado === 'EMITIDA'" class="text-end fw-bold">Total a devolver: S/ {{ importeDevolucion | number:'1.2-2' }}</div>
+
+
+        <div *ngIf="venta.estado === 'EMITIDA'" class="text-end fw-bold mt-3">
+
+          Total a devolver:
+          S/ {{ importeDevolucion | number:'1.2-2' }}
+        </div>
+
+
+        <div *ngIf="venta.estado === 'EMITIDA' && detallesADevolver.length" class="mt-4">
+
+          <label for="observacionDevolucion" class="form-label fw-semibold">
+            Motivo de la devolución
+            <span class="text-danger">*</span>
+          </label>
+
+          <textarea id="observacionDevolucion" class="form-control" rows="3" maxlength="500"
+            [(ngModel)]="observacionDevolucion" [disabled]="guardandoDevolucion"
+            placeholder="Ej.: El cliente recibió un medicamento equivocado.">
+          </textarea>
+
+          <div class="d-flex justify-content-between mt-1">
+            <small class="text-muted">
+              Indica por qué se devuelve el producto.
+            </small>
+
+            <small class="text-muted">
+              {{ observacionDevolucion.length }}/500
+            </small>
+          </div>
+        </div>
+
       </div>
+
+
+
       <div class="modal-footer">
-        <button class="btn btn-outline-secondary" [disabled]="guardandoDevolucion" (click)="ventaEditar = null">Cerrar</button>
-        <button *ngIf="venta.estado === 'EMITIDA'" class="btn btn-primary" (click)="guardarDevolucion()"
-          [disabled]="guardandoDevolucion || !detallesADevolver.length">
-          {{ guardandoDevolucion ? 'Guardando...' : 'Anular y devolver al stock' }}
+
+        <button class="btn btn-outline-secondary" [disabled]="guardandoDevolucion" (click)="ventaEditar = null">
+          Cerrar
         </button>
+
+        <button *ngIf="venta.estado === 'EMITIDA'" class="btn btn-primary" (click)="guardarDevolucion()" [disabled]="guardandoDevolucion ||
+                            !detallesADevolver.length ||
+                            !observacionDevolucion.trim()">
+
+          {{ guardandoDevolucion
+          ? 'Guardando...'
+          : 'Anular y devolver al stock' }}
+        </button>
+
       </div>
+
+
     </div>
   </div>
 </div>
