@@ -184,7 +184,7 @@ public class CajaServiceImpl implements ICajaService {
         // 4. Obtener ventas de esta caja
         List<Venta> ventas = ventaRepository.findByCajaIdCaja(idCaja);
 
-        // 5. Calcular ventas por método de pago
+        // 5. Calcular ventas por metodo de pago
         BigDecimal efectivo = sumarPorMetodo(ventas, MetodoPago.EFECTIVO);
         BigDecimal yape = sumarPorMetodo(ventas, MetodoPago.YAPE);
         BigDecimal plin = sumarPorMetodo(ventas, MetodoPago.PLIN);
@@ -263,7 +263,7 @@ public class CajaServiceImpl implements ICajaService {
     // =====================================================================
 
     /**
-     * QUÉ HACE: arma el resumen completo de una caja: totales por método de
+     * QUÉ HACE: arma el resumen completo de una caja: totales por metodo de
      *           pago, efectivo esperado y la lista de ventas.
      * POR QUÉ: la pantalla necesita todo junto; calcularlo en el backend evita
      *          errores de redondeo y mantiene una sola fuente de verdad del dinero.
@@ -282,7 +282,7 @@ public class CajaServiceImpl implements ICajaService {
         // 2. Traer todas las ventas hechas en ESTA caja.
         List<Venta> ventas = ventaRepository.findByCajaIdCaja(idCaja);
 
-        // 3. Sumar por método de pago (solo ventas EMITIDA).
+        // 3. Sumar por metodo de pago (solo ventas EMITIDA).
         BigDecimal efectivo = sumarPorMetodo(ventas, MetodoPago.EFECTIVO);
         BigDecimal yape     = sumarPorMetodo(ventas, MetodoPago.YAPE);
         BigDecimal plin     = sumarPorMetodo(ventas, MetodoPago.PLIN);

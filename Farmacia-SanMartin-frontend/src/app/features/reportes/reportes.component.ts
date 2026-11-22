@@ -11,7 +11,7 @@ import { VentaResponse } from '../../core/interfaces/venta-response.interface';
 import { DevolucionVentaResponse } from '../../core/interfaces/devolucion-venta.interface';
 import { ReporteCierres, ReporteInventario, ReporteVentas, ResumenVentasSP, ResumenVentas, PaginaVentas } from '../../core/interfaces/reporte.interface';
 import { MovimientoInventarioService } from '../../core/services/movimiento-inventario.service';
-import { PaginaMovimientos } from '../../core/interfaces/movimiento-inventario.interface';
+import { MovimientoInventario, PaginaMovimientos } from '../../core/interfaces/movimiento-inventario.interface';
 
 
 type Tab = 'ventas' | 'inventario' | 'cierres' | 'kardex';
@@ -270,6 +270,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
   get hayDatos(): boolean {
     if (this.tab === 'ventas') return !!this.ventas && this.ventas.totalRegistros > 0;
     if (this.tab === 'inventario') return !!this.inventario;
+    if (this.tab === 'kardex') {
+      return (this.kardex?.totalElements ?? 0) > 0;
+    }
     return !!this.cierres && this.cierres.cierres.length > 0;
   }
 
@@ -299,10 +302,18 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   private get titulo(): string {
-    return { ventas: 'Reporte de ventas', inventario: 'Reporte de inventario', cierres: 'Reporte de cierres de caja', kardex: 'Kardex de inventario' }[this.tab];
+    return {
+      ventas: 'Reporte de ventas',
+      inventario: 'Reporte de inventario',
+      cierres: 'Reporte de cierres de caja',
+      kardex: 'Kardex de inventario'
+    }[this.tab];
   }
 
   private get subtitulo(): string {
+    if (this.tab === 'kardex') {
+      return 'Historial completo de movimientos de inventario';
+    }
     return this.tab === 'inventario'
       ? `Al ${this.fechaCorta(this.iso(new Date()))} · lotes por vencer en ${this.dias} días`
       : `Del ${this.fechaCorta(this.desde)} al ${this.fechaCorta(this.hasta)}`;
@@ -349,15 +360,59 @@ export class ReportesComponent implements OnInit, OnDestroy {
       ];
     }
 
+
     if (this.tab === 'cierres' && this.cierres) {
-      return [{
-        nombre: 'Cierres de caja',
-        columnas: ['Cajero', 'Apertura', 'Cierre', 'Inicial', 'Ventas efectivo', 'Esperado', 'Contado', 'Diferencia'],
-        filas: this.cierres.cierres.map(c => [c.cajero, this.fechaHora(c.apertura), this.fechaHora(c.cierre),
-        c.montoInicial, c.ventasEfectivo, c.esperado, c.contado, c.diferencia]),
-        dinero: [3, 4, 5, 6, 7]
-      }];
+      const reporte = this.cierres;
+
+      return [
+        {
+          nombre: 'Resumen',
+          columnas: ['Indicador', 'Resultado'],
+          filas: [
+            ['Periodo',
+              `${this.fechaCorta(this.desde)} - ${this.fechaCorta(this.hasta)}`],
+            ['Cajas cerradas', reporte.cantidad],
+            ['Total sobrantes',
+              `S/ ${Number(reporte.totalSobrantes).toFixed(2)}`],
+            ['Total faltantes',
+              `S/ ${Number(reporte.totalFaltantes).toFixed(2)}`]
+          ]
+        },
+        {
+          nombre: 'Detalle de cierres',
+          columnas: [
+            'Cajero',
+            'Apertura',
+            'Cierre',
+            'Monto inicial',
+            'Ventas efectivo',
+            'Efectivo esperado',
+            'Efectivo contado',
+            'Digital esperado',
+            'Digital verificado',
+            'Dif. efectivo',
+            'Dif. digital',
+            'Dif. total'
+          ],
+          filas: reporte.cierres.map(c => [
+            c.cajero,
+            this.fechaHora(c.apertura),
+            this.fechaHora(c.cierre),
+            c.montoInicial,
+            c.ventasEfectivo,
+            c.efectivoEsperadoCierre ?? c.esperado,
+            c.contado,
+            c.digitalEsperado ?? 'Sin registro',
+            c.digitalVerificado ?? 'Sin registro',
+            c.diferencia,
+            c.diferenciaDigital ?? 'Sin registro',
+            c.diferenciaTotal ?? c.diferencia
+          ]),
+          dinero: [3, 4, 5, 6, 7, 8, 9, 10, 11]
+        }
+      ];
     }
+
     return [];
   }
 
@@ -380,10 +435,34 @@ export class ReportesComponent implements OnInit, OnDestroy {
     const hojasActuales = resumen ? [] : this.hojas();
     try {
       // La exportación incluye todo el período, no solo la página o búsqueda visibles.
-      const hojas = resumen
-        ? this.hojas(await firstValueFrom(this.reporteService.ventas(resumen.desde, resumen.hasta)))
-        : hojasActuales;
-      if (formato === 'excel') await this.exportService.excel(nombre, hojas);
+
+      const hojas = this.tab === 'kardex'
+
+        ? this.hojasKardex(
+          await this.obtenerTodosLosMovimientos()
+        )
+
+        : resumen
+
+          ? this.hojas(
+            await firstValueFrom(
+              this.reporteService.ventas(
+                resumen.desde,
+                resumen.hasta
+              )
+            )
+          )
+
+          : hojasActuales;
+
+      if (formato === 'excel') {
+        await this.exportService.excel(
+          nombre,
+          hojas,
+          titulo,
+          subtitulo
+        );
+      }
       else await this.exportService.pdf(nombre, titulo, subtitulo, hojas);
     } catch {
       this.alert.error(`No se pudo generar el ${formato === 'excel' ? 'Excel' : 'PDF'}.`);
@@ -416,5 +495,70 @@ export class ReportesComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+
+
+  private async obtenerTodosLosMovimientos(): Promise<MovimientoInventario[]> {
+
+    const todos: MovimientoInventario[] = [];
+    let pagina = 0;
+
+    while (true) {
+
+      const respuesta = await firstValueFrom(
+        this.movimientoService.listar(pagina, 100)
+      );
+
+      todos.push(...respuesta.content);
+
+      if (respuesta.last || respuesta.content.length === 0) {
+        break;
+      }
+
+      pagina++;
+    }
+
+    return todos;
+  }
+
+
+  private hojasKardex(movimientos: MovimientoInventario[]): Hoja[] {
+
+    return [{
+      nombre: 'Kardex',
+      columnas: [
+        'N° Movimiento',
+        'Fecha',
+        'Producto / Lote',
+        'Tipo',
+        'Cantidad',
+        'Stock anterior',
+        'Stock nuevo',
+        'Referencia',
+        'Responsable',
+        'Observación'
+      ],
+
+      filas: movimientos.map(m => [
+        m.idMovimiento,
+        this.fechaHora(m.fecha),
+
+        `${m.codigoProducto} - ${m.nombreProducto} / ${m.numeroLote}`,
+
+        m.tipoMovimiento,
+        m.cantidad,
+        m.stockAnterior,
+        m.stockNuevo,
+
+        m.referenciaTipo
+          ? `${m.referenciaTipo} #${m.referenciaId ?? '-'}`
+          : '-',
+
+        m.nombreUsuario,
+        m.observacion || '-'
+      ])
+    }];
+  }
+
 
 }

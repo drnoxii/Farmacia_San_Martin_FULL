@@ -49,6 +49,19 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarPorEstado(estado));
     }
 
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar datos del usuario")
+    public ResponseEntity<UsuarioDTO> actualizar(
+            @PathVariable Long id,
+            @RequestBody UsuarioDTO dto) {
+
+        return ResponseEntity.ok(
+                usuarioService.actualizar(id, dto)
+        );
+    }
+
+
     @PutMapping("/{id}/estado")
     @Operation(summary = "Activar o desactivar usuario")
     public ResponseEntity<UsuarioDTO> cambiarEstado(@PathVariable Long id,

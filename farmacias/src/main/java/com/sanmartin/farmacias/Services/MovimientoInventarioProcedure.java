@@ -20,9 +20,9 @@ public class MovimientoInventarioProcedure {
         this.em = em;
     }
 
-    // ==========================================
-    // 1. MÉTODO ORIGINAL: COMPRAS Y VENTAS
-    // ==========================================
+
+    // METODO ORIGINAL: COMPRAS Y VENTAS
+
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void registrar(
@@ -42,9 +42,8 @@ public class MovimientoInventarioProcedure {
         );
     }
 
-    // ==========================================
-    // 2. MÉTODO NUEVO: CON OBSERVACIÓN
-    // ==========================================
+    // METODO NUEVO: CON OBSERVACIÓN
+
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void registrar(
@@ -65,9 +64,8 @@ public class MovimientoInventarioProcedure {
         );
     }
 
-    // ==========================================
     // 3. EJECUTAR PROCEDURE EN ORACLE
-    // ==========================================
+
 
     private void ejecutarProcedure(
             Long idLote,

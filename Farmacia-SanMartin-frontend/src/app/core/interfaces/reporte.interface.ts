@@ -41,11 +41,28 @@ export interface ReporteInventario {
   stockBajo: StockBajoFila[]; lotesPorVencer: LoteFila[]; lotesVencidos: LoteFila[];
 }
 
+
 export interface CierreFila {
-  cajero: string; apertura: string; cierre: string;
-  montoInicial: number; ventasEfectivo: number; esperado: number;
-  contado: number; diferencia: number;
+  idCaja?: number;
+  cajero: string;
+  apertura: string;
+  cierre: string;
+
+  montoInicial: number;
+  ventasEfectivo: number;
+  esperado: number;
+  contado: number;
+  diferencia: number;
+
+  // Arqueo de efectivo y pagos digitales
+  efectivoEsperadoCierre?: number | null;
+  digitalEsperado?: number | null;
+  digitalVerificado?: number | null;
+  diferenciaDigital?: number | null;
+  diferenciaTotal?: number | null;
+  observacionCierre?: string | null;
 }
+
 
 export interface ReporteCierres {
   desde: string; hasta: string; cantidad: number;

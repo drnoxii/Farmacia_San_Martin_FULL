@@ -19,5 +19,7 @@ public interface IUsuarioService {
 
     UsuarioDTO cambiarEstado(Long id, EstadoGeneral estado);
 
+    UsuarioDTO actualizar(Long id, UsuarioDTO dto);
+
     void eliminar(Long id);
 }

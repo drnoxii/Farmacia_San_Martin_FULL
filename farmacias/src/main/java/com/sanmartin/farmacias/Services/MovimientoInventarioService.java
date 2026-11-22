@@ -22,9 +22,9 @@ public class MovimientoInventarioService {
         this.movimientoRepository = movimientoRepository;
     }
 
-    // ==========================================
+
     // CONSULTAR KARDEX CON PAGINACIÓN
-    // ==========================================
+
 
     @Transactional(readOnly = true)
     public Page<MovimientoInventarioResponseDTO> listar(
@@ -38,9 +38,8 @@ public class MovimientoInventarioService {
                 .map(this::toDto);
     }
 
-    // ==========================================
     // CONVERTIR ENTIDAD A DTO
-    // ==========================================
+
 
     private MovimientoInventarioResponseDTO toDto(
             MovimientoInventario movimiento) {

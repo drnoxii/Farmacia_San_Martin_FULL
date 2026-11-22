@@ -6,10 +6,14 @@ import com.sanmartin.farmacias.Entity.EstadoGeneral;
 import com.sanmartin.farmacias.Entity.Persona;
 import com.sanmartin.farmacias.Entity.Rol;
 import com.sanmartin.farmacias.Entity.Usuario;
+import com.sanmartin.farmacias.Exception.DuplicateResourceException;
 import com.sanmartin.farmacias.Exception.ResourceNotFoundException;
 import com.sanmartin.farmacias.Repository.PersonaRepository;
 import com.sanmartin.farmacias.Repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -44,6 +48,83 @@ public class UsuarioServiceImpl implements IUsuarioService {
     public List<UsuarioDTO> listarPorEstado(EstadoGeneral estado) {
         return usuarioRepository.findByEstadoGeneral(estado).stream().map(this::toDto).toList();
     }
+
+
+    @Override
+    @Transactional
+    public UsuarioDTO actualizar(Long id, UsuarioDTO dto) {
+
+        // 1. Buscar el usuario
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usuario no encontrado"
+                        )
+                );
+
+        Persona persona = usuario.getPersona();
+
+        // 2. Validar datos obligatorios
+        String dni = dto.numeroDocumento() == null
+                ? "" : dto.numeroDocumento().trim();
+
+        String nombre = dto.nombre() == null
+                ? "" : dto.nombre().trim();
+
+        String correo = dto.correo() == null
+                ? "" : dto.correo().trim();
+
+        if (!dni.matches("\\d{8}")
+                || nombre.isBlank()
+                || !correo.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Verifica el DNI, nombre y correo"
+            );
+        }
+
+        // 3. Evitar DNI duplicado en otra persona
+        personaRepository.findByNumeroDocumento(dni)
+                .ifPresent(existente -> {
+                    if (!existente.getIdPersona()
+                            .equals(persona.getIdPersona())) {
+
+                        throw new DuplicateResourceException(
+                                "El DNI ya pertenece a otra persona"
+                        );
+                    }
+                });
+
+        // 4. Evitar correo duplicado en otro usuario
+        usuarioRepository.findByCorreo(correo)
+                .ifPresent(existente -> {
+                    if (!existente.getIdUsuario()
+                            .equals(usuario.getIdUsuario())) {
+
+                        throw new DuplicateResourceException(
+                                "El correo ya pertenece a otro usuario"
+                        );
+                    }
+                });
+
+        // 5. Actualizar datos personales
+        persona.setNumeroDocumento(dni);
+        persona.setNombre(nombre);
+        persona.setTelefono(dto.telefono());
+        persona.setDireccion(dto.direccion());
+
+        // 6. Actualizar correo del usuario
+        usuario.setCorreo(correo);
+
+        // No modificar contraseña, rol ni estado
+
+        personaRepository.save(persona);
+        usuarioRepository.save(usuario);
+
+        return toDto(usuario);
+    }
+
 
     @Override
     public UsuarioDTO cambiarEstado(Long id, EstadoGeneral estado) {

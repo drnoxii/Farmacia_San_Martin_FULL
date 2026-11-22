@@ -253,10 +253,12 @@ public class VentaServiceImpl implements IVentaService{
         return toDto(venta);
     }
 
+
     private String generarNumeroVenta() {
-        long siguiente = ventaRepository.count() + 1;
+        Long siguiente = ventaRepository.siguienteNumeroVenta();
         return String.format("V%08d", siguiente);
     }
+
 
     private VentaResponseDTO toDto(Venta v) {
 

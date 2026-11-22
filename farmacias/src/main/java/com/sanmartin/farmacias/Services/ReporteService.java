@@ -97,9 +97,9 @@ public class ReporteService {
         return respuesta;
     }
 
-    // ==========================================
-    // 1. REPORTE DE VENTAS MEDIANTE SQL
-    // ==========================================
+
+    //  REPORTE DE VENTAS MEDIANTE SQL
+
 
     public Map<String, Object> reporteVentas(
             LocalDate desde, LocalDate hasta) {
@@ -219,9 +219,9 @@ public class ReporteService {
         return respuesta;
     }
 
-    // ==========================================
-    // 2. AGRUPAR LOS DATOS DEL REPORTE
-    // ==========================================
+
+    // AGRUPAR LOS DATOS DEL REPORTE
+
 
     private List<Map<String, Object>> agrupar(
             List<Map<String, Object>> ventas,
@@ -278,9 +278,9 @@ public class ReporteService {
         return resultado;
     }
 
-    // ==========================================
-    // 3. LLAMAR PROCEDIMIENTO ALMACENADO ORACLE
-    // ==========================================
+
+    //  LLAMAR PROCEDIMIENTO ALMACENADO ORACLE
+
 
     public Map<String, Object> ejecutarResumenVentasSP(
             LocalDate desde,
@@ -342,9 +342,9 @@ public class ReporteService {
         );
     }
 
-    // ==========================================
-    // 4. REPORTE SQL DE INVENTARIO
-    // ==========================================
+
+    // REPORTE SQL DE INVENTARIO
+
 
     public Map<String, Object> reporteInventario(int dias) {
 
@@ -354,9 +354,8 @@ public class ReporteService {
             );
         }
 
-        // --------------------------------------
-        // A. PRODUCTOS CON STOCK BAJO
-        // --------------------------------------
+   // PRODUCTOS CON STOCK BAJO
+
 
         String sqlStock = """
             SELECT
@@ -398,9 +397,7 @@ public class ReporteService {
         List<Map<String, Object>> stockBajo =
                 jdbc.queryForList(sqlStock);
 
-        // --------------------------------------
-        // B. LOTES PROXIMOS A VENCER
-        // --------------------------------------
+        // LOTES PROXIMOS A VENCER
 
         String sqlPorVencer = """
             SELECT
@@ -427,9 +424,8 @@ public class ReporteService {
         List<Map<String, Object>> lotesPorVencer =
                 jdbc.queryForList(sqlPorVencer, dias);
 
-        // --------------------------------------
-        // C. LOTES VENCIDOS CON STOCK
-        // --------------------------------------
+        // LOTES VENCIDOS CON STOCK
+
 
         String sqlVencidos = """
             SELECT
@@ -454,9 +450,9 @@ public class ReporteService {
         List<Map<String, Object>> lotesVencidos =
                 jdbc.queryForList(sqlVencidos);
 
-        // --------------------------------------
-        // D. RESPUESTA PARA ANGULAR
-        // --------------------------------------
+
+        //  RESPUESTA PARA ANGULAR
+
 
         Map<String, Object> respuesta =
                 new LinkedHashMap<>();
@@ -477,9 +473,8 @@ public class ReporteService {
         return respuesta;
     }
 
-    // ==========================================
-    // 5. REPORTE SQL DE CIERRES DE CAJA
-    // ==========================================
+    //  REPORTE SQL DE CIERRES DE CAJA
+
 
     public Map<String, Object> reporteCierres(
             LocalDate desde,
@@ -513,7 +508,22 @@ public class ReporteService {
 
                 NVL(C.MONTO_FINAL, 0) AS "contado",
 
-                C.DIFERENCIA AS "diferencia"
+                
+                    C.DIFERENCIA AS "diferencia",
+                
+                    -- Valores guardados al momento del cierre
+                    C.EFECTIVO_ESPERADO_CIERRE AS "efectivoEsperadoCierre",
+                
+                    C.DIGITAL_ESPERADO_CIERRE AS "digitalEsperado",
+                
+                    C.MONTO_DIGITAL_VERIFICADO AS "digitalVerificado",
+                
+                    C.DIFERENCIA_DIGITAL AS "diferenciaDigital",
+                
+                    C.DIFERENCIA_TOTAL AS "diferenciaTotal",
+                
+                    C.OBSERVACION_CIERRE AS "observacionCierre"
+                
 
             FROM CAJA C
 
@@ -570,8 +580,17 @@ public class ReporteService {
         BigDecimal totalSobrantes = BigDecimal.ZERO;
         BigDecimal totalFaltantes = BigDecimal.ZERO;
 
+
         for (Map<String, Object> cierre : cierres) {
-            Object valor = cierre.get("diferencia");
+
+            // Usar el resultado total del arqueo:
+            // diferencia efectivo + diferencia digital
+            Object valor = cierre.get("diferenciaTotal");
+
+            // Compatibilidad con cajas antiguas
+            if (valor == null) {
+                valor = cierre.get("diferencia");
+            }
 
             BigDecimal diferencia = valor == null
                     ? BigDecimal.ZERO
@@ -583,6 +602,7 @@ public class ReporteService {
                 totalFaltantes = totalFaltantes.add(diferencia.abs());
             }
         }
+
 
         respuesta.put("desde", desde.toString());
         respuesta.put("hasta", hasta.toString());
