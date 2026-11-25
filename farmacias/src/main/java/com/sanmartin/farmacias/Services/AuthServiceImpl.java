@@ -40,23 +40,29 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     @Override
+    @Transactional
     public UsuarioDTO registrar(RegistroDTO dto) {
-        if (personaRepository.existsByNumeroDocumento(dto.numeroDocumento())) {
-            throw new RuntimeException("Ya existe una persona con ese DNI");
-        }
         if (usuarioRepository.existsByCorreo(dto.correo())) {
-            throw new RuntimeException("Ya existe un usuario con ese nombre de usuario");
+            throw new RuntimeException("Ya existe un usuario con ese correo");
         }
 
-        //  Persona
-        Persona persona = new Persona();
+        // 1. Buscar si la persona ya existe por DNI; si no existe, crearla
+        Persona persona = personaRepository.findByNumeroDocumento(dto.numeroDocumento())
+                .orElseGet(Persona::new);
+
         persona.setNumeroDocumento(dto.numeroDocumento());
         persona.setNombre(dto.nombre());
         persona.setTelefono(dto.telefono());
         persona.setDireccion(dto.direccion());
         persona = personaRepository.save(persona);
 
-        //  Usuario
+
+        // 2. Verificar que esa persona no tenga ya una cuenta de usuario
+        if (usuarioRepository.existsByPersonaIdPersona(persona.getIdPersona())) {
+            throw new RuntimeException("Esta persona ya tiene un usuario registrado");
+        }
+
+        // 3. Crear el usuario vinculado a esa persona
         Usuario usuario = new Usuario();
         usuario.setPersona(persona);
         usuario.setCorreo(dto.correo());
@@ -67,6 +73,7 @@ public class AuthServiceImpl implements IAuthService {
 
         return toDto(usuario);
     }
+
 
 
     @Override

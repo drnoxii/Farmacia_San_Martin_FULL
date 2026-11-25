@@ -12,7 +12,7 @@ export class AlertService {
       title: title,
       text: message,
       icon: 'success',
-      confirmButtonColor: '#003A6C', // Color primario UPeU
+      confirmButtonColor: '#003A6C',
     });
   }
 

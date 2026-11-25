@@ -52,7 +52,7 @@ export class AuthService {
     clearTimeout(this.vencimiento);
     if (typeof sessionStorage === 'undefined') return;
     sessionStorage.removeItem(this.clave);
-    localStorage.removeItem('usuario'); // Retira el antiguo acceso simulado.
+    localStorage.removeItem('usuario');
     this.cart.vaciarCarrito();
   }
 

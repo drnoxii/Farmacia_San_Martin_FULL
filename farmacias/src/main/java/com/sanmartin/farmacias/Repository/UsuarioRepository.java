@@ -20,6 +20,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long> {
 
     Optional<Usuario> findByPersonaNumeroDocumento(String numeroDocumento);
 
+    boolean existsByPersonaIdPersona(Long idPersona);
+
+
     List<Usuario> findByRol(Rol rol);
 
     List<Usuario> findByEstadoGeneral(EstadoGeneral estado);
